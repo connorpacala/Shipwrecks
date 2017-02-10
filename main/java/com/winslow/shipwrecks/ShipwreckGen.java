@@ -131,6 +131,7 @@ public class ShipwreckGen implements IWorldGenerator{
 			JsonObject jsonObj = (JsonObject) parser.parse(out.toString());
 			addBlocksJsonEast(world, jsonObj, pos, "hull", Blocks.PLANKS); //add ship hull to the world
 			addBlocksJsonEast(world, jsonObj, pos, "mast", Blocks.LOG); //add ship mast to the world
+			addBlocksJsonEast(world, jsonObj, pos, "chest", Blocks.CHEST); //add ship mast to the world
 
 		} catch (JsonIOException e) {
 			e.printStackTrace();
@@ -166,6 +167,7 @@ public class ShipwreckGen implements IWorldGenerator{
 			JsonObject jsonObj = (JsonObject) parser.parse(out.toString());
 			addBlocksJsonWest(world, jsonObj, pos, "hull", Blocks.PLANKS); //add ship hull to the world
 			addBlocksJsonWest(world, jsonObj, pos, "mast", Blocks.LOG); //add ship mast to the world
+			addBlocksJsonWest(world, jsonObj, pos, "chest", Blocks.CHEST); //add ship mast to the world
 
 		} catch (JsonIOException e) {
 			e.printStackTrace();
@@ -201,6 +203,7 @@ public class ShipwreckGen implements IWorldGenerator{
 			JsonObject jsonObj = (JsonObject) parser.parse(out.toString());
 			addBlocksJsonNorth(world, jsonObj, pos, "hull", Blocks.PLANKS); //add ship hull to the world
 			addBlocksJsonNorth(world, jsonObj, pos, "mast", Blocks.LOG); //add ship mast to the world
+			addBlocksJsonNorth(world, jsonObj, pos, "chest", Blocks.CHEST); //add ship mast to the world
 
 		} catch (JsonIOException e) {
 			e.printStackTrace();
@@ -236,6 +239,7 @@ public class ShipwreckGen implements IWorldGenerator{
 			JsonObject jsonObj = (JsonObject) parser.parse(out.toString());
 			addBlocksJsonSouth(world, jsonObj, pos, "hull", Blocks.PLANKS); //add ship hull to the world
 			addBlocksJsonSouth(world, jsonObj, pos, "mast", Blocks.LOG); //add ship mast to the world
+			addBlocksJsonSouth(world, jsonObj, pos, "chest", Blocks.CHEST); //add ship mast to the world
 
 		} catch (JsonIOException e) {
 			e.printStackTrace();
@@ -263,11 +267,23 @@ public class ShipwreckGen implements IWorldGenerator{
 				for (int i = 0; i < blocks.size(); ++i)
 				{
 					JsonArray posArray = (JsonArray) blocks.get(i);
-					int x = posArray.get(0).getAsInt();
-					int y = posArray.get(1).getAsInt() - 1;
-					int z = posArray.get(2).getAsInt();
-					
-					addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block);
+					if(posArray.size() == 3) //blocks without metadata (only position data)
+					{
+						int x = posArray.get(0).getAsInt();
+						int y = posArray.get(1).getAsInt() - 1;
+						int z = posArray.get(2).getAsInt();
+						
+						addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block);
+					}
+					else if(posArray.size() == 4) //blocks with metadata
+					{
+						int x = posArray.get(0).getAsInt();
+						int y = posArray.get(1).getAsInt() - 1;
+						int z = posArray.get(2).getAsInt();
+						int md = posArray.get(3).getAsInt();
+						
+						addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block, md);
+					}
 				}
 			}
 		}
@@ -288,11 +304,43 @@ public class ShipwreckGen implements IWorldGenerator{
 				for (int i = 0; i < blocks.size(); ++i)
 				{
 					JsonArray posArray = (JsonArray) blocks.get(i);
-					int x = -1 * posArray.get(0).getAsInt();
-					int y = posArray.get(1).getAsInt() - 1;
-					int z = posArray.get(2).getAsInt();
-					
-					addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block);
+					if(posArray.size() == 3) //blocks without metadata (only position data)
+					{
+						int x = -1 * posArray.get(0).getAsInt();
+						int y = posArray.get(1).getAsInt() - 1;
+						int z = posArray.get(2).getAsInt();
+						
+						addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block);
+					}
+					else if(posArray.size() == 4) //blocks with metadata
+					{
+						int x = -1 * posArray.get(0).getAsInt();
+						int y = posArray.get(1).getAsInt() - 1;
+						int z = posArray.get(2).getAsInt();
+						int md = posArray.get(3).getAsInt();
+						
+						//convert metadata to face correct direction
+						switch(md)
+						{
+							case 2:
+								md = 3;
+								break;
+								
+							case 3:
+								md = 2;
+								break;
+								
+							case 4:
+								md = 5;
+								break;
+								
+							case 5:
+								md = 4;
+								break;
+						}
+						
+						addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block, md);
+					}
 				}
 			}
 		}
@@ -313,11 +361,43 @@ public class ShipwreckGen implements IWorldGenerator{
 				for (int i = 0; i < blocks.size(); ++i)
 				{
 					JsonArray posArray = (JsonArray) blocks.get(i);
-					int x = posArray.get(2).getAsInt();
-					int y = posArray.get(1).getAsInt() - 1;
-					int z = -1 * posArray.get(0).getAsInt();
-					
-					addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block);
+					if(posArray.size() == 3) //blocks without metadata (only position data)
+					{
+						int x = posArray.get(2).getAsInt();
+						int y = posArray.get(1).getAsInt() - 1;
+						int z = -1 * posArray.get(0).getAsInt();
+						
+						addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block);
+					}
+					else if(posArray.size() == 4) //blocks with metadata
+					{
+						int x = posArray.get(2).getAsInt();
+						int y = posArray.get(1).getAsInt() - 1;
+						int z = -1 * posArray.get(0).getAsInt();
+						int md = posArray.get(3).getAsInt();
+						
+						//convert metadata to face correct direction
+						switch(md)
+						{
+							case 2:
+								md = 4;
+								break;
+								
+							case 3:
+								md = 5;
+								break;
+								
+							case 4:
+								md = 3;
+								break;
+								
+							case 5:
+								md = 2;
+								break;
+						}
+						
+						addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block, md);
+					}
 				}
 			}
 		}
@@ -338,11 +418,43 @@ public class ShipwreckGen implements IWorldGenerator{
 				for (int i = 0; i < blocks.size(); ++i)
 				{
 					JsonArray posArray = (JsonArray) blocks.get(i);
-					int x = posArray.get(2).getAsInt();
-					int y = posArray.get(1).getAsInt() - 1;
-					int z = posArray.get(0).getAsInt();
-					
-					addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block);
+					if(posArray.size() == 3) //blocks without metadata (only position data)
+					{
+						int x = posArray.get(2).getAsInt();
+						int y = posArray.get(1).getAsInt() - 1;
+						int z = posArray.get(0).getAsInt();
+						
+						addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block);
+					}
+					else if(posArray.size() == 4) //blocks with metadata
+					{
+						int x = posArray.get(2).getAsInt();
+						int y = posArray.get(1).getAsInt() - 1;
+						int z = posArray.get(0).getAsInt();
+						int md = posArray.get(3).getAsInt();
+						
+						//convert metadata to face correct direction
+						switch(md)
+						{
+							case 2:
+								md = 5;
+								break;
+								
+							case 3:
+								md = 4;
+								break;
+								
+							case 4:
+								md = 2;
+								break;
+								
+							case 5:
+								md = 3;
+								break;
+						}
+						
+						addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block, md);
+					}
 				}
 			}
 		}
