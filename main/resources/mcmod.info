@@ -1,0 +1,16 @@
+[
+{
+  "modid": "shipwrecks_winslow",
+  "name": "Shipwrecks!",
+  "description": "Adds shipwrecks to the oceans and beaches of the overworld.",
+  "version": "${2.0.0}",
+  "mcversion": "${1.11.2}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["The Winslow"],
+  "credits": "MC Elix for providing me with the better ship designs",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
