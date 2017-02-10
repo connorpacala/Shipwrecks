@@ -129,42 +129,9 @@ public class ShipwreckGen implements IWorldGenerator{
 			stream.close();
 			
 			JsonObject jsonObj = (JsonObject) parser.parse(out.toString());
-			JsonArray blocks;
-			
-			
-			if(jsonObj.has("hull"))
-			{
-				blocks = jsonObj.getAsJsonArray("hull");
-				if(blocks != null)
-				{
-					for (int i = 0; i < blocks.size(); ++i)
-					{
-						JsonArray posArray = (JsonArray) blocks.get(i);
-						int x = posArray.get(0).getAsInt();
-						int y = posArray.get(1).getAsInt() - 1;
-						int z = posArray.get(2).getAsInt();
-						
-						addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, Blocks.PLANKS);
-					}
-				}
-			}
-			
-			if(jsonObj.has("mast"))
-			{
-				blocks = jsonObj.getAsJsonArray("mast");
-				if(blocks != null)
-				{
-					for (int i = 0; i < blocks.size(); ++i)
-					{
-						JsonArray posArray = (JsonArray) blocks.get(i);
-						int x = -1 * posArray.get(0).getAsInt();
-						int y = posArray.get(1).getAsInt() - 1;
-						int z = posArray.get(2).getAsInt();
-						
-						addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, Blocks.LOG);
-					}
-				}
-			}
+			addBlocksJsonEast(world, jsonObj, pos, "hull", Blocks.PLANKS); //add ship hull to the world
+			addBlocksJsonEast(world, jsonObj, pos, "mast", Blocks.LOG); //add ship mast to the world
+
 		} catch (JsonIOException e) {
 			e.printStackTrace();
 		} catch (JsonSyntaxException e) {
@@ -197,41 +164,9 @@ public class ShipwreckGen implements IWorldGenerator{
 			stream.close();
 			
 			JsonObject jsonObj = (JsonObject) parser.parse(out.toString());
-			JsonArray blocks;
-			
-			if(jsonObj.has("hull"))
-			{
-				blocks = jsonObj.getAsJsonArray("hull");
-				if(blocks != null)
-				{
-					for (int i = 0; i < blocks.size(); ++i)
-					{
-						JsonArray posArray = (JsonArray) blocks.get(i);
-						int x = -1 * posArray.get(0).getAsInt();
-						int y = posArray.get(1).getAsInt() - 1;
-						int z = posArray.get(2).getAsInt();
-						
-						addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, Blocks.PLANKS);
-					}
-				}
-			}
-			
-			if(jsonObj.has("mast"))
-			{
-				blocks = jsonObj.getAsJsonArray("mast");
-				if(blocks != null)
-				{
-					for (int i = 0; i < blocks.size(); ++i)
-					{
-						JsonArray posArray = (JsonArray) blocks.get(i);
-						int x = -1 * posArray.get(0).getAsInt();
-						int y = posArray.get(1).getAsInt() - 1;
-						int z = posArray.get(2).getAsInt();
-						
-						addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, Blocks.LOG);
-					}
-				}
-			}
+			addBlocksJsonWest(world, jsonObj, pos, "hull", Blocks.PLANKS); //add ship hull to the world
+			addBlocksJsonWest(world, jsonObj, pos, "mast", Blocks.LOG); //add ship mast to the world
+
 		} catch (JsonIOException e) {
 			e.printStackTrace();
 		} catch (JsonSyntaxException e) {
@@ -264,41 +199,9 @@ public class ShipwreckGen implements IWorldGenerator{
 			stream.close();
 			
 			JsonObject jsonObj = (JsonObject) parser.parse(out.toString());
-			JsonArray blocks;
-			
-			if(jsonObj.has("hull"))
-			{
-				blocks = jsonObj.getAsJsonArray("hull");
-				if(blocks != null)
-				{
-					for (int i = 0; i < blocks.size(); ++i)
-					{
-						JsonArray posArray = (JsonArray) blocks.get(i);
-						int x = posArray.get(2).getAsInt();
-						int y = posArray.get(1).getAsInt() - 1;
-						int z = -1 * posArray.get(0).getAsInt();
-						
-						addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, Blocks.PLANKS);
-					}
-				}
-			}
-			
-			if(jsonObj.has("mast"))
-			{
-				blocks = jsonObj.getAsJsonArray("mast");
-				if(blocks != null)
-				{
-					for (int i = 0; i < blocks.size(); ++i)
-					{
-						JsonArray posArray = (JsonArray) blocks.get(i);
-						int x = -1 * posArray.get(0).getAsInt();
-						int y = posArray.get(1).getAsInt() - 1;
-						int z = posArray.get(2).getAsInt();
-						
-						addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, Blocks.LOG);
-					}
-				}
-			}
+			addBlocksJsonNorth(world, jsonObj, pos, "hull", Blocks.PLANKS); //add ship hull to the world
+			addBlocksJsonNorth(world, jsonObj, pos, "mast", Blocks.LOG); //add ship mast to the world
+
 		} catch (JsonIOException e) {
 			e.printStackTrace();
 		} catch (JsonSyntaxException e) {
@@ -331,41 +234,9 @@ public class ShipwreckGen implements IWorldGenerator{
 			stream.close();
 			
 			JsonObject jsonObj = (JsonObject) parser.parse(out.toString());
-			JsonArray blocks;
-			
-			if(jsonObj.has("hull"))
-			{
-				blocks = jsonObj.getAsJsonArray("hull");
-				if(blocks != null)
-				{
-					for (int i = 0; i < blocks.size(); ++i)
-					{
-						JsonArray posArray = (JsonArray) blocks.get(i);
-						int x = posArray.get(2).getAsInt();
-						int y = posArray.get(1).getAsInt() - 1;
-						int z = posArray.get(0).getAsInt();
-						
-						addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, Blocks.PLANKS);
-					}
-				}
-			}
-			
-			if(jsonObj.has("mast"))
-			{
-				blocks = jsonObj.getAsJsonArray("mast");
-				if(blocks != null)
-				{
-					for (int i = 0; i < blocks.size(); ++i)
-					{
-						JsonArray posArray = (JsonArray) blocks.get(i);
-						int x = -1 * posArray.get(0).getAsInt();
-						int y = posArray.get(1).getAsInt() - 1;
-						int z = posArray.get(2).getAsInt();
-						
-						addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, Blocks.LOG);
-					}
-				}
-			}
+			addBlocksJsonSouth(world, jsonObj, pos, "hull", Blocks.PLANKS); //add ship hull to the world
+			addBlocksJsonSouth(world, jsonObj, pos, "mast", Blocks.LOG); //add ship mast to the world
+
 		} catch (JsonIOException e) {
 			e.printStackTrace();
 		} catch (JsonSyntaxException e) {
@@ -374,6 +245,106 @@ public class ShipwreckGen implements IWorldGenerator{
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
+		}
+	}
+	
+	/*
+	 * read blocks from the passed jsonObj and the array with the key stored in "structurPiece".
+	 */
+	private void addBlocksJsonEast(World world, JsonObject jsonObj, BlockPos pos, String structurePiece, Block block)
+	{
+		JsonArray blocks;
+		
+		if(jsonObj.has(structurePiece))
+		{
+			blocks = jsonObj.getAsJsonArray(structurePiece);
+			if(blocks != null)
+			{
+				for (int i = 0; i < blocks.size(); ++i)
+				{
+					JsonArray posArray = (JsonArray) blocks.get(i);
+					int x = posArray.get(0).getAsInt();
+					int y = posArray.get(1).getAsInt() - 1;
+					int z = posArray.get(2).getAsInt();
+					
+					addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block);
+				}
+			}
+		}
+	}
+	
+	/*
+	 * read blocks from the passed jsonObj and the array with the key stored in "structurPiece".
+	 */
+	private void addBlocksJsonWest(World world, JsonObject jsonObj, BlockPos pos, String structurePiece, Block block)
+	{
+		JsonArray blocks;
+		
+		if(jsonObj.has(structurePiece))
+		{
+			blocks = jsonObj.getAsJsonArray(structurePiece);
+			if(blocks != null)
+			{
+				for (int i = 0; i < blocks.size(); ++i)
+				{
+					JsonArray posArray = (JsonArray) blocks.get(i);
+					int x = -1 * posArray.get(0).getAsInt();
+					int y = posArray.get(1).getAsInt() - 1;
+					int z = posArray.get(2).getAsInt();
+					
+					addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block);
+				}
+			}
+		}
+	}
+	
+	/*
+	 * read blocks from the passed jsonObj and the array with the key stored in "structurPiece".
+	 */
+	private void addBlocksJsonNorth(World world, JsonObject jsonObj, BlockPos pos, String structurePiece, Block block)
+	{
+		JsonArray blocks;
+		
+		if(jsonObj.has(structurePiece))
+		{
+			blocks = jsonObj.getAsJsonArray(structurePiece);
+			if(blocks != null)
+			{
+				for (int i = 0; i < blocks.size(); ++i)
+				{
+					JsonArray posArray = (JsonArray) blocks.get(i);
+					int x = posArray.get(2).getAsInt();
+					int y = posArray.get(1).getAsInt() - 1;
+					int z = -1 * posArray.get(0).getAsInt();
+					
+					addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block);
+				}
+			}
+		}
+	}
+	
+	/*
+	 * read blocks from the passed jsonObj and the array with the key stored in "structurPiece".
+	 */
+	private void addBlocksJsonSouth(World world, JsonObject jsonObj, BlockPos pos, String structurePiece, Block block)
+	{
+		JsonArray blocks;
+		
+		if(jsonObj.has(structurePiece))
+		{
+			blocks = jsonObj.getAsJsonArray(structurePiece);
+			if(blocks != null)
+			{
+				for (int i = 0; i < blocks.size(); ++i)
+				{
+					JsonArray posArray = (JsonArray) blocks.get(i);
+					int x = posArray.get(2).getAsInt();
+					int y = posArray.get(1).getAsInt() - 1;
+					int z = posArray.get(0).getAsInt();
+					
+					addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block);
+				}
+			}
 		}
 	}
 	
@@ -388,6 +359,7 @@ public class ShipwreckGen implements IWorldGenerator{
 	/*
 	 * Add a block with metadata
 	 */
+	@SuppressWarnings("deprecation") //suppressed as getStateFromMeta is not actually deprecated by Mojang
 	private void addBlock(World world, int x, int y, int z, Block block, int metadata)
 	{
 		world.setBlockState(new BlockPos(x, y, z), block.getStateFromMeta(metadata)); //getStateFromMeta not actually deprecated
