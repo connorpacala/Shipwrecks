@@ -7,6 +7,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Random;
 
+import com.google.common.base.Charsets;
+import com.google.common.io.Resources;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonObject;
@@ -118,17 +120,10 @@ public class ShipwreckGen implements IWorldGenerator{
 		try
 		{
 			//Read JSON string from structure file
-			InputStream stream = Minecraft.getMinecraft().getResourceManager().getResource(
-					new ResourceLocation(ShipwrecksMain.MODID, "structures/" + structure + ".json")).getInputStream();
-			BufferedReader in = new BufferedReader(new InputStreamReader(stream));
-			StringBuilder out = new StringBuilder();
-			String line;
-			while((line = in.readLine()) != null)
-				out.append(line);
-			in.close();
-			stream.close();
+			String textFile = Resources.toString(ShipwrecksMain.class.getResource(
+					"/assets/" + ShipwrecksMain.MODID + "/structures/" + structure + ".json"), Charsets.UTF_8);
 			
-			JsonObject jsonObj = (JsonObject) parser.parse(out.toString());
+			JsonObject jsonObj = (JsonObject) parser.parse(textFile);
 			addBlocksJsonEast(world, jsonObj, pos, "hull", Blocks.PLANKS); //add ship hull to the world
 			addBlocksJsonEast(world, jsonObj, pos, "mast", Blocks.LOG); //add ship mast to the world
 			addBlocksJsonEast(world, jsonObj, pos, "chest", Blocks.CHEST); //add ship mast to the world
@@ -154,17 +149,10 @@ public class ShipwreckGen implements IWorldGenerator{
 		try
 		{
 			//Read JSON string from structure file
-			InputStream stream = Minecraft.getMinecraft().getResourceManager().getResource(
-					new ResourceLocation(ShipwrecksMain.MODID, "structures/" + structure + ".json")).getInputStream();
-			BufferedReader in = new BufferedReader(new InputStreamReader(stream));
-			StringBuilder out = new StringBuilder();
-			String line;
-			while((line = in.readLine()) != null)
-				out.append(line);
-			in.close();
-			stream.close();
+			String textFile = Resources.toString(ShipwrecksMain.class.getResource(
+					"/assets/" + ShipwrecksMain.MODID + "/structures/" + structure + ".json"), Charsets.UTF_8);
 			
-			JsonObject jsonObj = (JsonObject) parser.parse(out.toString());
+			JsonObject jsonObj = (JsonObject) parser.parse(textFile);
 			addBlocksJsonWest(world, jsonObj, pos, "hull", Blocks.PLANKS); //add ship hull to the world
 			addBlocksJsonWest(world, jsonObj, pos, "mast", Blocks.LOG); //add ship mast to the world
 			addBlocksJsonWest(world, jsonObj, pos, "chest", Blocks.CHEST); //add ship mast to the world
@@ -190,17 +178,10 @@ public class ShipwreckGen implements IWorldGenerator{
 		try
 		{
 			//Read JSON string from structure file
-			InputStream stream = Minecraft.getMinecraft().getResourceManager().getResource(
-					new ResourceLocation(ShipwrecksMain.MODID, "structures/" + structure + ".json")).getInputStream();
-			BufferedReader in = new BufferedReader(new InputStreamReader(stream));
-			StringBuilder out = new StringBuilder();
-			String line;
-			while((line = in.readLine()) != null)
-				out.append(line);
-			in.close();
-			stream.close();
+			String textFile = Resources.toString(ShipwrecksMain.class.getResource(
+					"/assets/" + ShipwrecksMain.MODID + "/structures/" + structure + ".json"), Charsets.UTF_8);
 			
-			JsonObject jsonObj = (JsonObject) parser.parse(out.toString());
+			JsonObject jsonObj = (JsonObject) parser.parse(textFile);
 			addBlocksJsonNorth(world, jsonObj, pos, "hull", Blocks.PLANKS); //add ship hull to the world
 			addBlocksJsonNorth(world, jsonObj, pos, "mast", Blocks.LOG); //add ship mast to the world
 			addBlocksJsonNorth(world, jsonObj, pos, "chest", Blocks.CHEST); //add ship mast to the world
@@ -226,17 +207,10 @@ public class ShipwreckGen implements IWorldGenerator{
 		try
 		{
 			//Read JSON string from structure file
-			InputStream stream = Minecraft.getMinecraft().getResourceManager().getResource(
-					new ResourceLocation(ShipwrecksMain.MODID, "structures/" + structure + ".json")).getInputStream();
-			BufferedReader in = new BufferedReader(new InputStreamReader(stream));
-			StringBuilder out = new StringBuilder();
-			String line;
-			while((line = in.readLine()) != null)
-				out.append(line);
-			in.close();
-			stream.close();
+			String textFile = Resources.toString(ShipwrecksMain.class.getResource(
+					"/assets/" + ShipwrecksMain.MODID + "/structures/" + structure + ".json"), Charsets.UTF_8);
 			
-			JsonObject jsonObj = (JsonObject) parser.parse(out.toString());
+			JsonObject jsonObj = (JsonObject) parser.parse(textFile);
 			addBlocksJsonSouth(world, jsonObj, pos, "hull", Blocks.PLANKS); //add ship hull to the world
 			addBlocksJsonSouth(world, jsonObj, pos, "mast", Blocks.LOG); //add ship mast to the world
 			addBlocksJsonSouth(world, jsonObj, pos, "chest", Blocks.CHEST); //add ship mast to the world
@@ -325,15 +299,12 @@ public class ShipwreckGen implements IWorldGenerator{
 							case 2:
 								md = 3;
 								break;
-								
 							case 3:
 								md = 2;
 								break;
-								
 							case 4:
 								md = 5;
 								break;
-								
 							case 5:
 								md = 4;
 								break;
@@ -382,15 +353,12 @@ public class ShipwreckGen implements IWorldGenerator{
 							case 2:
 								md = 4;
 								break;
-								
 							case 3:
 								md = 5;
 								break;
-								
 							case 4:
 								md = 3;
 								break;
-								
 							case 5:
 								md = 2;
 								break;
@@ -439,15 +407,12 @@ public class ShipwreckGen implements IWorldGenerator{
 							case 2:
 								md = 5;
 								break;
-								
 							case 3:
 								md = 4;
 								break;
-								
 							case 4:
 								md = 2;
 								break;
-								
 							case 5:
 								md = 3;
 								break;
