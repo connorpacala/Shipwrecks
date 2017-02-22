@@ -75,23 +75,158 @@ public class ShipwreckGen implements IWorldGenerator{
 	 */
 	private void generateStructures(World world, String structure, BlockPos pos)
 	{
-		Random random = new Random();
-		switch(random.nextInt(4)) //Spawn ship facing random direction
+		JsonParser parser = new JsonParser();
+		
+		try
 		{
-			case 0:
-				generateStructureEast(world, structure, pos);
-				break;
-			case 1:
-				generateStructureWest(world, structure, pos);
-				break;
-			case 2:
-				generateStructureNorth(world, structure, pos);
-				break;
-			case 3:
-				generateStructureSouth(world, structure, pos);
-				break;
+			//Read JSON string from structure file
+			String textFile = Resources.toString(ShipwrecksMain.class.getResource(
+					"/assets/" + ShipwrecksMain.MODID + "/structures/" + structure + ".json"), Charsets.UTF_8);
+			
+			JsonObject jsonObj = (JsonObject) parser.parse(textFile);
+			
+			Random random = new Random();
+			int orientation = random.nextInt(4); //N, W, S, E orientation
+			
+			addBlocksJson(world, jsonObj, pos, "hull", Blocks.PLANKS, orientation); //add ship hull to the world
+			addBlocksJson(world, jsonObj, pos, "mast", Blocks.LOG, orientation); //add ship mast to the world
+			addBlocksJson(world, jsonObj, pos, "chest", Blocks.CHEST, orientation); //add ship mast to the world
+
+		} catch (JsonIOException e) {
+			e.printStackTrace();
+		} catch (JsonSyntaxException e) {
+			e.printStackTrace();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
+	
+	private void addBlocksJson(World world, JsonObject jsonObj, BlockPos pos, String structurePiece, Block block, int orientation)
+	{	
+		JsonArray blocks;
+		
+		if(jsonObj.has(structurePiece))
+		{
+			blocks = jsonObj.getAsJsonArray(structurePiece);
+			if(blocks != null)
+			{
+				for (int i = 0; i < blocks.size(); ++i)
+				{
+					JsonArray posArray = (JsonArray) blocks.get(i);
+
+					if(posArray.size() >= 3) //json array has at least 3 values (x, y, z)
+					{
+						int x = posArray.get(0).getAsInt();
+						int y = posArray.get(1).getAsInt() - 1;
+						int z = posArray.get(2).getAsInt();
+						
+						//convert coords to correct position based on orientation
+						switch(orientation)
+						{
+							case 1: //West
+								x = -x;
+								break;
+							case 2: //North
+								int tempN = x;
+								x = z;
+								z = -tempN;
+								break;
+							case 3: //South
+								int tempS = x;
+								x = z;
+								z = tempS;
+								break;
+						}
+						
+						if(posArray.size() == 4) //blocks with metadata
+						{
+							int md = posArray.get(3).getAsInt();
+							
+							//convert metadata to face correct direction
+							switch(orientation)
+							{
+								case 1: //West
+									md = convertMetaWest(md);
+									break;
+								case 2: //North
+									md = convertMetaNorth(md);
+									break;
+								case 3: //South
+									md = convertMetaSouth(md);
+									break;
+							}
+							addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block, md);
+						}
+						else //blocks without metadata
+							addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block);
+					}
+				}
+			}
+		}
+	}
+	
+	private int convertMetaWest(int md)
+	{
+		switch(md)
+		{
+			case 2:
+				md = 3;
+				break;
+			case 3:
+				md = 2;
+				break;
+			case 4:
+				md = 5;
+				break;
+			case 5:
+				md = 4;
+				break;
+		}
+		return md;
+	}
+	
+	private int convertMetaNorth(int md)
+	{
+		switch(md)
+		{
+			case 2:
+				md = 4;
+				break;
+			case 3:
+				md = 5;
+				break;
+			case 4:
+				md = 3;
+				break;
+			case 5:
+				md = 2;
+				break;
+		}
+		return md;
+	}
+	
+	private int convertMetaSouth(int md)
+	{
+		switch(md)
+		{
+			case 2:
+				md = 5;
+				break;
+			case 3:
+				md = 4;
+				break;
+			case 4:
+				md = 2;
+				break;
+			case 5:
+				md = 3;
+				break;
+		}
+		return md;
+	}
+	
 	
 	/*
 	 * Finds the highest non-air block at the passed x and z coordinates
@@ -108,321 +243,6 @@ public class ShipwreckGen implements IWorldGenerator{
 				return pos;
 		}
 		return pos;
-	}
-
-	/*
-	 * Generate structure facing East.
-	 */
-	private void generateStructureEast(World world, String structure, BlockPos pos)
-	{
-		JsonParser parser = new JsonParser();
-		
-		try
-		{
-			//Read JSON string from structure file
-			String textFile = Resources.toString(ShipwrecksMain.class.getResource(
-					"/assets/" + ShipwrecksMain.MODID + "/structures/" + structure + ".json"), Charsets.UTF_8);
-			
-			JsonObject jsonObj = (JsonObject) parser.parse(textFile);
-			addBlocksJsonEast(world, jsonObj, pos, "hull", Blocks.PLANKS); //add ship hull to the world
-			addBlocksJsonEast(world, jsonObj, pos, "mast", Blocks.LOG); //add ship mast to the world
-			addBlocksJsonEast(world, jsonObj, pos, "chest", Blocks.CHEST); //add ship mast to the world
-
-		} catch (JsonIOException e) {
-			e.printStackTrace();
-		} catch (JsonSyntaxException e) {
-			e.printStackTrace();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	/*
-	 * Generate structure facing West.
-	 */
-	private void generateStructureWest(World world, String structure, BlockPos pos)
-	{
-		JsonParser parser = new JsonParser();
-		
-		try
-		{
-			//Read JSON string from structure file
-			String textFile = Resources.toString(ShipwrecksMain.class.getResource(
-					"/assets/" + ShipwrecksMain.MODID + "/structures/" + structure + ".json"), Charsets.UTF_8);
-			
-			JsonObject jsonObj = (JsonObject) parser.parse(textFile);
-			addBlocksJsonWest(world, jsonObj, pos, "hull", Blocks.PLANKS); //add ship hull to the world
-			addBlocksJsonWest(world, jsonObj, pos, "mast", Blocks.LOG); //add ship mast to the world
-			addBlocksJsonWest(world, jsonObj, pos, "chest", Blocks.CHEST); //add ship mast to the world
-
-		} catch (JsonIOException e) {
-			e.printStackTrace();
-		} catch (JsonSyntaxException e) {
-			e.printStackTrace();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	/*
-	 * Generate structure facing North.
-	 */
-	private void generateStructureNorth(World world, String structure, BlockPos pos)
-	{
-		JsonParser parser = new JsonParser();
-		
-		try
-		{
-			//Read JSON string from structure file
-			String textFile = Resources.toString(ShipwrecksMain.class.getResource(
-					"/assets/" + ShipwrecksMain.MODID + "/structures/" + structure + ".json"), Charsets.UTF_8);
-			
-			JsonObject jsonObj = (JsonObject) parser.parse(textFile);
-			addBlocksJsonNorth(world, jsonObj, pos, "hull", Blocks.PLANKS); //add ship hull to the world
-			addBlocksJsonNorth(world, jsonObj, pos, "mast", Blocks.LOG); //add ship mast to the world
-			addBlocksJsonNorth(world, jsonObj, pos, "chest", Blocks.CHEST); //add ship mast to the world
-
-		} catch (JsonIOException e) {
-			e.printStackTrace();
-		} catch (JsonSyntaxException e) {
-			e.printStackTrace();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	/*
-	 * Generate structure facing South.
-	 */
-	private void generateStructureSouth(World world, String structure, BlockPos pos)
-	{
-		JsonParser parser = new JsonParser();
-		
-		try
-		{
-			//Read JSON string from structure file
-			String textFile = Resources.toString(ShipwrecksMain.class.getResource(
-					"/assets/" + ShipwrecksMain.MODID + "/structures/" + structure + ".json"), Charsets.UTF_8);
-			
-			JsonObject jsonObj = (JsonObject) parser.parse(textFile);
-			addBlocksJsonSouth(world, jsonObj, pos, "hull", Blocks.PLANKS); //add ship hull to the world
-			addBlocksJsonSouth(world, jsonObj, pos, "mast", Blocks.LOG); //add ship mast to the world
-			addBlocksJsonSouth(world, jsonObj, pos, "chest", Blocks.CHEST); //add ship mast to the world
-
-		} catch (JsonIOException e) {
-			e.printStackTrace();
-		} catch (JsonSyntaxException e) {
-			e.printStackTrace();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	/*
-	 * read blocks from the passed jsonObj and the array with the key stored in "structurPiece".
-	 */
-	private void addBlocksJsonEast(World world, JsonObject jsonObj, BlockPos pos, String structurePiece, Block block)
-	{
-		JsonArray blocks;
-		
-		if(jsonObj.has(structurePiece))
-		{
-			blocks = jsonObj.getAsJsonArray(structurePiece);
-			if(blocks != null)
-			{
-				for (int i = 0; i < blocks.size(); ++i)
-				{
-					JsonArray posArray = (JsonArray) blocks.get(i);
-					if(posArray.size() == 3) //blocks without metadata (only position data)
-					{
-						int x = posArray.get(0).getAsInt();
-						int y = posArray.get(1).getAsInt() - 1;
-						int z = posArray.get(2).getAsInt();
-						
-						addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block);
-					}
-					else if(posArray.size() == 4) //blocks with metadata
-					{
-						int x = posArray.get(0).getAsInt();
-						int y = posArray.get(1).getAsInt() - 1;
-						int z = posArray.get(2).getAsInt();
-						int md = posArray.get(3).getAsInt();
-						
-						addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block, md);
-					}
-				}
-			}
-		}
-	}
-	
-	/*
-	 * read blocks from the passed jsonObj and the array with the key stored in "structurPiece".
-	 */
-	private void addBlocksJsonWest(World world, JsonObject jsonObj, BlockPos pos, String structurePiece, Block block)
-	{
-		JsonArray blocks;
-		
-		if(jsonObj.has(structurePiece))
-		{
-			blocks = jsonObj.getAsJsonArray(structurePiece);
-			if(blocks != null)
-			{
-				for (int i = 0; i < blocks.size(); ++i)
-				{
-					JsonArray posArray = (JsonArray) blocks.get(i);
-					if(posArray.size() == 3) //blocks without metadata (only position data)
-					{
-						int x = -1 * posArray.get(0).getAsInt();
-						int y = posArray.get(1).getAsInt() - 1;
-						int z = posArray.get(2).getAsInt();
-						
-						addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block);
-					}
-					else if(posArray.size() == 4) //blocks with metadata
-					{
-						int x = -1 * posArray.get(0).getAsInt();
-						int y = posArray.get(1).getAsInt() - 1;
-						int z = posArray.get(2).getAsInt();
-						int md = posArray.get(3).getAsInt();
-						
-						//convert metadata to face correct direction
-						switch(md)
-						{
-							case 2:
-								md = 3;
-								break;
-							case 3:
-								md = 2;
-								break;
-							case 4:
-								md = 5;
-								break;
-							case 5:
-								md = 4;
-								break;
-						}
-						
-						addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block, md);
-					}
-				}
-			}
-		}
-	}
-	
-	/*
-	 * read blocks from the passed jsonObj and the array with the key stored in "structurPiece".
-	 */
-	private void addBlocksJsonNorth(World world, JsonObject jsonObj, BlockPos pos, String structurePiece, Block block)
-	{
-		JsonArray blocks;
-		
-		if(jsonObj.has(structurePiece))
-		{
-			blocks = jsonObj.getAsJsonArray(structurePiece);
-			if(blocks != null)
-			{
-				for (int i = 0; i < blocks.size(); ++i)
-				{
-					JsonArray posArray = (JsonArray) blocks.get(i);
-					if(posArray.size() == 3) //blocks without metadata (only position data)
-					{
-						int x = posArray.get(2).getAsInt();
-						int y = posArray.get(1).getAsInt() - 1;
-						int z = -1 * posArray.get(0).getAsInt();
-						
-						addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block);
-					}
-					else if(posArray.size() == 4) //blocks with metadata
-					{
-						int x = posArray.get(2).getAsInt();
-						int y = posArray.get(1).getAsInt() - 1;
-						int z = -1 * posArray.get(0).getAsInt();
-						int md = posArray.get(3).getAsInt();
-						
-						//convert metadata to face correct direction
-						switch(md)
-						{
-							case 2:
-								md = 4;
-								break;
-							case 3:
-								md = 5;
-								break;
-							case 4:
-								md = 3;
-								break;
-							case 5:
-								md = 2;
-								break;
-						}
-						
-						addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block, md);
-					}
-				}
-			}
-		}
-	}
-	
-	/*
-	 * read blocks from the passed jsonObj and the array with the key stored in "structurPiece".
-	 */
-	private void addBlocksJsonSouth(World world, JsonObject jsonObj, BlockPos pos, String structurePiece, Block block)
-	{
-		JsonArray blocks;
-		
-		if(jsonObj.has(structurePiece))
-		{
-			blocks = jsonObj.getAsJsonArray(structurePiece);
-			if(blocks != null)
-			{
-				for (int i = 0; i < blocks.size(); ++i)
-				{
-					JsonArray posArray = (JsonArray) blocks.get(i);
-					if(posArray.size() == 3) //blocks without metadata (only position data)
-					{
-						int x = posArray.get(2).getAsInt();
-						int y = posArray.get(1).getAsInt() - 1;
-						int z = posArray.get(0).getAsInt();
-						
-						addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block);
-					}
-					else if(posArray.size() == 4) //blocks with metadata
-					{
-						int x = posArray.get(2).getAsInt();
-						int y = posArray.get(1).getAsInt() - 1;
-						int z = posArray.get(0).getAsInt();
-						int md = posArray.get(3).getAsInt();
-						
-						//convert metadata to face correct direction
-						switch(md)
-						{
-							case 2:
-								md = 5;
-								break;
-							case 3:
-								md = 4;
-								break;
-							case 4:
-								md = 2;
-								break;
-							case 5:
-								md = 3;
-								break;
-						}
-						
-						addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block, md);
-					}
-				}
-			}
-		}
 	}
 	
 	/*
