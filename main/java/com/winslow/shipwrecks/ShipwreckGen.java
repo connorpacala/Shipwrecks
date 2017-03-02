@@ -1,10 +1,8 @@
 package com.winslow.shipwrecks;
 
-import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.net.URL;
 import java.util.Random;
 
 import com.google.common.base.Charsets;
@@ -16,9 +14,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
 import net.minecraft.block.Block;
-import net.minecraft.client.Minecraft;
 import net.minecraft.init.Blocks;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
@@ -50,7 +46,7 @@ public class ShipwreckGen implements IWorldGenerator{
 		Biome bio = world.getBiome(pos);
 		String biomeName = bio.getBiomeName().toLowerCase();
 		
-		String structure = "";
+		/*String structure = "";
 		
 		//choose the structure to generate, WILL BE REPLACED WITH WEIGHTED CHOICE BASED ON USER INPUT
 		switch(random.nextInt(2))
@@ -62,12 +58,14 @@ public class ShipwreckGen implements IWorldGenerator{
 			case 1:
 				structure = "sailboatup";
 				break;
-		}
+		}*/
 		
 		if(biomeName.contains("ocean")) //check to generate ship in ocean
-			generateStructures(world, structure, pos);
+			//generateStructures(world, structure, pos);
+			generateStructures(world, getStructureName(true, random), pos);
 		else if(biomeName.contains("beach")) //check to generate ship on beach
-			generateStructures(world, structure, pos);
+			//generateStructures(world, structure, pos);
+			generateStructures(world, getStructureName(false, random), pos);
 	}
 	
 	/*
@@ -75,13 +73,19 @@ public class ShipwreckGen implements IWorldGenerator{
 	 */
 	private void generateStructures(World world, String structure, BlockPos pos)
 	{
+		if(structure == null)
+			return;
+					
 		JsonParser parser = new JsonParser();
 		
 		try
 		{
 			//Read JSON string from structure file
-			String textFile = Resources.toString(ShipwrecksMain.class.getResource(
-					"/assets/" + ShipwrecksMain.MODID + "/structures/" + structure + ".json"), Charsets.UTF_8);
+			URL path = ShipwrecksMain.class.getResource("/assets/" + ShipwrecksMain.MODID 
+					+ "/structures/" + structure + ".json");	
+			if(path == null)
+				return;
+			String textFile = Resources.toString(path, Charsets.UTF_8);
 			
 			JsonObject jsonObj = (JsonObject) parser.parse(textFile);
 			
@@ -103,6 +107,9 @@ public class ShipwreckGen implements IWorldGenerator{
 		}
 	}
 	
+	/*
+	 * adds blocks to the world with positions read from passed JsonObject 
+	 */
 	private void addBlocksJson(World world, JsonObject jsonObj, BlockPos pos, String structurePiece, Block block, int orientation)
 	{	
 		JsonArray blocks;
@@ -140,7 +147,7 @@ public class ShipwreckGen implements IWorldGenerator{
 								break;
 						}
 						
-						if(posArray.size() == 4) //blocks with metadata
+						if(posArray.size() == 4) //add blocks with metadata
 						{
 							int md = posArray.get(3).getAsInt();
 							
@@ -159,7 +166,7 @@ public class ShipwreckGen implements IWorldGenerator{
 							}
 							addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block, md);
 						}
-						else //blocks without metadata
+						else //add blocks without metadata
 							addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block);
 					}
 				}
@@ -167,6 +174,9 @@ public class ShipwreckGen implements IWorldGenerator{
 		}
 	}
 	
+	/*
+	 * Converts passed metadata from east facing BP to value for West facing spawns
+	 */
 	private int convertMetaWest(int md)
 	{
 		switch(md)
@@ -187,6 +197,9 @@ public class ShipwreckGen implements IWorldGenerator{
 		return md;
 	}
 	
+	/*
+	 * Converts passed metadata from east facing BP to value for North facing spawns
+	 */
 	private int convertMetaNorth(int md)
 	{
 		switch(md)
@@ -207,6 +220,9 @@ public class ShipwreckGen implements IWorldGenerator{
 		return md;
 	}
 	
+	/*
+	 * Converts passed metadata from east facing BP to value for South facing spawns
+	 */
 	private int convertMetaSouth(int md)
 	{
 		switch(md)
@@ -260,5 +276,40 @@ public class ShipwreckGen implements IWorldGenerator{
 	private void addBlock(World world, int x, int y, int z, Block block, int metadata)
 	{
 		world.setBlockState(new BlockPos(x, y, z), block.getStateFromMeta(metadata)); //getStateFromMeta not actually deprecated
+	}
+	
+	/*
+	 * Get the correct name for the structure to generate based on the corresponding weight
+	 * 
+	 * parameters: isOceanBiome, true = is an ocean biome, false = is not (it's a beach biome) 
+	 */
+	private String getStructureName(Boolean isOceanBiome, Random random)
+	{
+		int[] weights;
+		//get the correct weights for structures based on the biome
+		if(isOceanBiome)
+			weights = ShipwreckConfig.getOceanWeights();
+		else
+			weights = ShipwreckConfig.getBeachWeights();
+			
+		//find the sum of all weights
+		int totalWeight = 0;
+		for(int i = 0; i < weights.length; ++i)
+			totalWeight += weights[i];
+		
+		int value = random.nextInt(totalWeight);
+		totalWeight = 0;
+		for(int i = 0; i < weights.length; ++i)
+		{
+			totalWeight += weights[i];
+			if(totalWeight >= value)
+			{
+				if(i == 0) //the first index, weighted value for no ships to spawn so don't return a name
+					return null;
+				else //return the name of the wreck corresponding to the weight
+					return ShipwreckConfig.getNames()[i - 1]; //i - 1 as the weighted array has the no spawn value at index 0
+			}
+		}
+		return null;
 	}
 }

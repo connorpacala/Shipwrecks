@@ -1,8 +1,5 @@
 package com.winslow.shipwrecks;
 
-import java.io.File;
-
-import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
@@ -22,15 +19,11 @@ public class ShipwrecksMain {
 	//static int startEntityId = 0;
 	public static ShipwreckGen shipwreckgen = new ShipwreckGen();
 	
-		@EventHandler
-		public void Init(FMLPreInitializationEvent event)
-		{
-			Configuration config = new Configuration(event.getSuggestedConfigurationFile());
-			
-			config.load();
-			config.save();
-			//ShipwreckConfig.initConfiguration(event);
-		}
+	@EventHandler
+	public void Init(FMLPreInitializationEvent event)
+	{
+		ShipwreckConfig.initConfiguration(event);
+	}
 	
 	@EventHandler
 	public void	Init(FMLInitializationEvent event)
