@@ -15,6 +15,9 @@ import com.google.gson.JsonSyntaxException;
 
 import net.minecraft.block.Block;
 import net.minecraft.init.Blocks;
+import net.minecraft.init.Items;
+import net.minecraft.item.ItemStack;
+import net.minecraft.tileentity.TileEntityChest;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
@@ -45,20 +48,6 @@ public class ShipwreckGen implements IWorldGenerator{
 		
 		Biome bio = world.getBiome(pos);
 		String biomeName = bio.getBiomeName().toLowerCase();
-		
-		/*String structure = "";
-		
-		//choose the structure to generate, WILL BE REPLACED WITH WEIGHTED CHOICE BASED ON USER INPUT
-		switch(random.nextInt(2))
-		{
-			case 0:
-				structure = "rowboat";
-				break;
-				
-			case 1:
-				structure = "sailboatup";
-				break;
-		}*/
 		
 		if(biomeName.contains("ocean")) //check to generate ship in ocean
 			//generateStructures(world, structure, pos);
@@ -94,7 +83,7 @@ public class ShipwreckGen implements IWorldGenerator{
 			
 			addBlocksJson(world, jsonObj, pos, "hull", Blocks.PLANKS, orientation); //add ship hull to the world
 			addBlocksJson(world, jsonObj, pos, "mast", Blocks.LOG, orientation); //add ship mast to the world
-			addBlocksJson(world, jsonObj, pos, "chest", Blocks.CHEST, orientation); //add ship mast to the world
+			addChestsJson(world, jsonObj, pos, "chest", Blocks.CHEST, orientation); //add ship mast to the world
 
 		} catch (JsonIOException e) {
 			e.printStackTrace();
@@ -112,16 +101,15 @@ public class ShipwreckGen implements IWorldGenerator{
 	 */
 	private void addBlocksJson(World world, JsonObject jsonObj, BlockPos pos, String structurePiece, Block block, int orientation)
 	{	
-		JsonArray blocks;
-		
 		if(jsonObj.has(structurePiece))
 		{
+			JsonArray blocks;
 			blocks = jsonObj.getAsJsonArray(structurePiece);
 			if(blocks != null)
 			{
 				for (int i = 0; i < blocks.size(); ++i)
 				{
-					JsonArray posArray = (JsonArray) blocks.get(i);
+					JsonArray posArray = blocks.get(i).getAsJsonArray();
 
 					if(posArray.size() >= 3) //json array has at least 3 values (x, y, z)
 					{
@@ -168,6 +156,77 @@ public class ShipwreckGen implements IWorldGenerator{
 						}
 						else //add blocks without metadata
 							addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block);
+					}
+				}
+			}
+		}
+	}
+	
+	private void addChestsJson(World world, JsonObject jsonObj, BlockPos pos, String structurePiece, Block block, int orientation) //add ship mast to the world
+	{
+		if(jsonObj.has(structurePiece))
+		{
+			JsonArray blocks;
+			blocks = jsonObj.getAsJsonArray(structurePiece); //get array of chest objects
+			
+			if(blocks != null)
+			{
+				//cycle through chest objects, add chest, and add chest loot
+				for (int i = 0; i < blocks.size(); ++i)
+				{
+					if(blocks.get(i).isJsonObject()) //make sure that blocks is an array of JSON objects
+					{
+						JsonObject chest = blocks.get(i).getAsJsonObject();
+						
+						if(chest != null)
+						{
+							//coordinates for the chest
+							if(chest.get("coords").isJsonArray())
+							{
+								JsonArray posArray = chest.get("coords").getAsJsonArray();
+								int x = posArray.get(0).getAsInt();
+								int y = posArray.get(1).getAsInt() - 1;
+								int z = posArray.get(2).getAsInt();
+								
+								//convert coords to correct position based on orientation
+								switch(orientation)
+								{
+									case 1: //West
+										x = -x;
+										break;
+									case 2: //North
+										int tempN = x;
+										x = z;
+										z = -tempN;
+										break;
+									case 3: //South
+										int tempS = x;
+										x = z;
+										z = tempS;
+										break;
+								}
+								int md = posArray.get(3).getAsInt();
+								
+								//convert metadata to face correct direction
+								switch(orientation)
+								{
+									case 1: //West
+										md = convertMetaWest(md);
+										break;
+									case 2: //North
+										md = convertMetaNorth(md);
+										break;
+									case 3: //South
+										md = convertMetaSouth(md);
+										break;
+								}
+								addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block, md);
+								
+								//add appropriate loot based on the loot pool that 
+								int lootPool = chest.get("loot").getAsInt();
+								addChestLoot(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, lootPool);
+							}
+						}
 					}
 				}
 			}
@@ -311,5 +370,24 @@ public class ShipwreckGen implements IWorldGenerator{
 			}
 		}
 		return null;
+	}
+	
+	/*
+	 * add chest loot based on lootPool value
+	 */
+	private void addChestLoot(World world, int x, int y, int z, int lootPool)
+	{
+		Random random = new Random();
+		BlockPos chestPos = new BlockPos(x, y, z);
+		
+		ItemStack stack = new ItemStack(Items.GOLD_INGOT);
+		
+		switch(lootPool)
+		{
+			case 1:
+				TileEntityChest tileentitychest = (TileEntityChest)world.getTileEntity(chestPos);
+				tileentitychest.setInventorySlotContents(random.nextInt(tileentitychest.getSizeInventory()), stack);
+				break;
+		}
 	}
 }
