@@ -3,11 +3,15 @@ package com.winslow.shipwrecks;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
+import java.util.Set;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -43,18 +47,28 @@ public class ShipwreckGen implements IWorldGenerator{
 	private void generateSurface(World world, int chunkX, int chunkZ)
 	{
 		//Get the highest non-air block
-		BlockPos pos = new BlockPos(chunkX, world.getHeight(chunkX, chunkZ), chunkZ);//getWorldHeight(world, chunkX, chunkZ);
-		Random random = new Random();
+		BlockPos pos = new BlockPos(chunkX, 63, chunkZ);//getWorldHeight(world, chunkX, chunkZ);
 		
-		Biome bio = world.getBiome(pos);
-		String biomeName = bio.getBiomeName().toLowerCase();
-		
-		if(biomeName.contains("ocean")) //check to generate ship in ocean
-			//generateStructures(world, structure, pos);
-			generateStructures(world, getStructureName(true, random), pos);
-		else if(biomeName.contains("beach")) //check to generate ship on beach
-			//generateStructures(world, structure, pos);
-			generateStructures(world, getStructureName(false, random), pos);
+		int max = ShipwreckConfig.getMaxDist();
+		if(canSpawnHere(pos, max))
+		{
+			Random random = new Random();
+
+			Biome bio = world.getBiome(pos);
+			String biomeName = bio.getBiomeName().toLowerCase();
+			
+			int min = ShipwreckConfig.getMinDist();
+			
+			double maxOffset = ( (double)max - (double)min ) / 2.0;
+			int newX = (int)(pos.getX() + (random.nextDouble() * maxOffset - 2 * random.nextDouble() * maxOffset));
+			int newZ = (int)(pos.getZ() + (random.nextDouble() * maxOffset - 2 * random.nextDouble() * maxOffset));
+			pos = pos.add(newX, world.getHeight(newX, newZ), newZ);
+			
+			if(biomeName.contains("ocean")) //check to generate ship in ocean
+				generateStructures(world, getStructureName(true, random), pos);
+			else if(biomeName.contains("beach")) //check to generate ship on beach
+				generateStructures(world, getStructureName(false, random), pos);
+		}
 	}
 	
 	/*
@@ -81,9 +95,18 @@ public class ShipwreckGen implements IWorldGenerator{
 			Random random = new Random();
 			int orientation = random.nextInt(4); //N, W, S, E orientation
 			
+			//check if the object is able to float, if no value set, assume that it can't float
+			Boolean canFloat = false;
+			
+			if(jsonObj.has("canFloat"))
+				canFloat = jsonObj.get("canFloat").getAsBoolean();
+			if(!canFloat || random.nextInt(20) != 0) //chance for structures that can float to not float REPLACE THIS WITH A VARIABLE IN THE CONFIG
+				pos = findSeafloor(world, pos);
+			
 			addBlocksJson(world, jsonObj, pos, "hull", Blocks.PLANKS, orientation); //add ship hull to the world
 			addBlocksJson(world, jsonObj, pos, "mast", Blocks.LOG, orientation); //add ship mast to the world
-			addChestsJson(world, jsonObj, pos, "chest", Blocks.CHEST, orientation); //add ship mast to the world
+			addBlocksJson(world, jsonObj, pos, "chest", Blocks.CHEST, orientation); //add ship chests to the world
+			addBlocksJson(world, jsonObj, pos, "random", Blocks.LOG, orientation); //add blocks that appear in a random range around the ship to the world
 
 		} catch (JsonIOException e) {
 			e.printStackTrace();
@@ -97,11 +120,31 @@ public class ShipwreckGen implements IWorldGenerator{
 	}
 	
 	/*
+	 * Check if wreck can spawn here based on min and max distances set in config
+	 */
+	private Boolean canSpawnHere(BlockPos pos, int maxDist)
+	{
+		//wrecks can spawn only on (maxDist, Y, maxDist) nodes)
+		if(pos.getX() % maxDist == 0 && pos.getY() % maxDist == 0)
+			return true;
+		
+		return false;
+	}
+	
+	/*
 	 * adds blocks to the world with positions read from passed JsonObject 
 	 */
 	private void addBlocksJson(World world, JsonObject jsonObj, BlockPos pos, String structurePiece, Block block, int orientation)
 	{	
-		if(jsonObj.has(structurePiece))
+		if(structurePiece.equalsIgnoreCase("chest"))
+		{
+			addChestsJson(world, jsonObj, pos, structurePiece, Blocks.CHEST, orientation);
+		}
+		else if(structurePiece.equalsIgnoreCase("random"))
+		{
+			addRandomBlocksJson(world, jsonObj, pos, structurePiece, block);
+		}
+		else if(jsonObj.has(structurePiece))
 		{
 			JsonArray blocks;
 			blocks = jsonObj.getAsJsonArray(structurePiece);
@@ -139,19 +182,28 @@ public class ShipwreckGen implements IWorldGenerator{
 						{
 							int md = posArray.get(3).getAsInt();
 							
-							//convert metadata to face correct direction
-							switch(orientation)
+							//logs have annoying metadata. 4 = east/west, 8 = North/South, so if wreck is facing N/S (instead of default East), swap metadata
+							if(block == Blocks.LOG && (orientation == 2 || orientation == 3))
 							{
-								case 1: //West
-									md = convertMetaWest(md);
-									break;
-								case 2: //North
-									md = convertMetaNorth(md);
-									break;
-								case 3: //South
-									md = convertMetaSouth(md);
-									break;
+								md = (md == 4) ? 8 : 4;
 							}
+							else
+							{
+								//convert metadata to face correct direction
+								switch(orientation)
+								{
+									case 1: //West
+										md = convertMetaWest(md);
+										break;
+									case 2: //North
+										md = convertMetaNorth(md);
+										break;
+									case 3: //South
+										md = convertMetaSouth(md);
+										break;
+								}
+							}
+							
 							addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block, md);
 						}
 						else //add blocks without metadata
@@ -162,6 +214,57 @@ public class ShipwreckGen implements IWorldGenerator{
 		}
 	}
 	
+	/*
+	 * Add blocks to the structure that can be a random distance between a min and max value stored in the JSON file.
+	 */
+	private void addRandomBlocksJson(World world, JsonObject jsonObj, BlockPos pos, String structurePiece, Block block)
+	{
+		Random random = new Random();
+		
+		if(jsonObj.has(structurePiece))
+		{
+			JsonArray blocks;
+			blocks = jsonObj.getAsJsonArray(structurePiece); //get array of random objects
+			
+			if(blocks != null)
+			{
+				for(int i = 0; i < blocks.size(); ++i)
+				{
+					JsonObject obj = blocks.get(i).getAsJsonObject();
+					
+					//get key in Json object corresponding to object being added (e.g. get "chest" key and add a chest)
+					Set<Entry<String, JsonElement>> keys = obj.entrySet();
+					String structureName = "";
+					for(Map.Entry<String, JsonElement> key: keys) //get the last key in the object (should be the name of the object)
+						structureName = key.getKey();
+					
+					//get the random range (min, max) values to spawn object in
+					JsonArray range = obj.get("range").getAsJsonArray();
+					
+					int min = range.get(0).getAsInt();
+					int max = range.get(1).getAsInt();
+					
+					int xOffset = min + random.nextInt(max - min);
+					int zOffset = min + random.nextInt(max - min);
+					
+					//50% chance to be negative x or y from center of wreck
+					if(random.nextInt(2) == 0)
+						xOffset *= -1;
+					if(random.nextInt(2) == 0)
+						zOffset *= -1;
+					
+					//find new position to act as (0, 0, 0) for random object
+					BlockPos newPos = new BlockPos(pos.getX() + xOffset, pos.getY(), pos.getZ() + zOffset);
+					
+					addBlocksJson(world, obj, newPos, structureName, block, random.nextInt(4));
+				}
+			}
+		}
+	}
+	
+	/*
+	 * Attempts to add chests from the passed json file to the world
+	 */
 	private void addChestsJson(World world, JsonObject jsonObj, BlockPos pos, String structurePiece, Block block, int orientation) //add ship mast to the world
 	{
 		if(jsonObj.has(structurePiece))
@@ -304,19 +407,15 @@ public class ShipwreckGen implements IWorldGenerator{
 	
 	
 	/*
-	 * Finds the highest non-air block at the passed x and z coordinates
+	 * Finds the highest non-water/non-air block at the passed x and z coordinates
 	 * Returns the BlockPos for the found height and x and z coords
 	 */
-	protected BlockPos getWorldHeight(World world, int x, int z)
+	private BlockPos findSeafloor(World world, BlockPos pos)
 	{
 		//start at the highest block
-		BlockPos pos = new BlockPos(x, world.getHeight(x, z), z);
-		for(int i = pos.getY(); i > 63; --i)
-		{
+		while(world.getBlockState(pos).getBlock() == Blocks.WATER || world.getBlockState(pos).getBlock() == Blocks.AIR)
 			pos = pos.down();
-			if(world.getBlockState(pos).getBlock() != Blocks.AIR)
-				return pos;
-		}
+		
 		return pos;
 	}
 	
