@@ -57,11 +57,12 @@ public class ShipwreckGen implements IWorldGenerator{
 			Biome bio = world.getBiome(pos);
 			String biomeName = bio.getBiomeName().toLowerCase();
 			
+			//Random offset from chunk between min and max from center of chunk
 			int min = ShipwreckConfig.getMinDist();
 			
 			double maxOffset = ( (double)max - (double)min ) / 2.0;
-			int newX = (int)(pos.getX() + (random.nextDouble() * maxOffset - 2 * random.nextDouble() * maxOffset));
-			int newZ = (int)(pos.getZ() + (random.nextDouble() * maxOffset - 2 * random.nextDouble() * maxOffset));
+			int newX = (int)(pos.getX() + (random.nextDouble() * maxOffset - 2 * random.nextDouble() * maxOffset) * 16);
+			int newZ = (int)(pos.getZ() + (random.nextDouble() * maxOffset - 2 * random.nextDouble() * maxOffset) * 16);
 			pos = pos.add(newX, world.getHeight(newX, newZ), newZ);
 			
 			if(biomeName.contains("ocean")) //check to generate ship in ocean
@@ -124,8 +125,10 @@ public class ShipwreckGen implements IWorldGenerator{
 	 */
 	private Boolean canSpawnHere(BlockPos pos, int maxDist)
 	{
+		int xVal = (pos.getX() / 16) % maxDist;
+		int zVal = (pos.getZ() / 16) % maxDist;
 		//wrecks can spawn only on (maxDist, Y, maxDist) nodes)
-		if(pos.getX() % maxDist == 0 && pos.getY() % maxDist == 0)
+		if(xVal == 0 && zVal == 0)
 			return true;
 		
 		return false;

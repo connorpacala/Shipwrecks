@@ -19,7 +19,7 @@ public class ShipwreckConfig {
 		config.load();
 		
 		config.get("Distance", "A: Instructions", "This section controls the distance between shipwrecks. I recommend keeping the max distance relatively low as you will have wrecks noticeably pop-in otherwise when they spawn (e.g. if you set it to 100 chunks, you could see a wreck pop in 100 chunks behind you). I also recommend you keep minDist above 3 to prevent ships from spawning on each other.");
-		setMaxDist(config.get("Distance", "maxDist", 8, "maxDist = the maximum number of chunks between wrecks (with 100% spawn rates of wrecks, actually works out to be [maxDist * 2 - minDist] as the actual maximum distance between wrecks)").getInt());
+		setMaxDist(config.get("Distance", "maxDist", 5, "maxDist = the maximum number of chunks between wrecks (with 100% spawn rates of wrecks, actually works out to be [maxDist * 2 - minDist] as the actual maximum distance between wrecks)").getInt());
 		setMinDist(config.get("Distance", "minDist", 3, "minDist = the minimum chunks between wrecks, wrecks will not be closer than this.").getInt());
 		
 		config.get("Structures", "A: Instructions", "This is a list of the structures that will be used in generation. These MUST be seperated by a ',' and match the name of the JSON filename for the structure (without the .json extension).");
