@@ -47,7 +47,7 @@ public class ShipwreckGen implements IWorldGenerator{
 	private void generateSurface(World world, int chunkX, int chunkZ)
 	{
 		//Get the highest non-air block
-		BlockPos pos = new BlockPos(chunkX, 63, chunkZ);//getWorldHeight(world, chunkX, chunkZ);
+		BlockPos pos = new BlockPos(chunkX, 0, chunkZ);//getWorldHeight(world, chunkX, chunkZ);
 		
 		int max = ShipwreckConfig.getMaxDist();
 		if(canSpawnHere(pos, max))
@@ -61,9 +61,10 @@ public class ShipwreckGen implements IWorldGenerator{
 			int min = ShipwreckConfig.getMinDist();
 			
 			double maxOffset = ( (double)max - (double)min ) / 2.0;
-			int newX = (int)(pos.getX() + (random.nextDouble() * maxOffset - 2 * random.nextDouble() * maxOffset) * 16);
-			int newZ = (int)(pos.getZ() + (random.nextDouble() * maxOffset - 2 * random.nextDouble() * maxOffset) * 16);
-			pos = pos.add(newX, world.getHeight(newX, newZ), newZ);
+			int newX = (int)((random.nextDouble() * maxOffset - 2 * random.nextDouble() * maxOffset) * 16);
+			int newZ = (int)((random.nextDouble() * maxOffset - 2 * random.nextDouble() * maxOffset) * 16);
+			pos = pos.add(newX, 0, newZ);
+			pos = pos.add(0, findSeafloor(world, pos), 0);
 			
 			if(biomeName.contains("ocean")) //check to generate ship in ocean
 				generateStructures(world, getStructureName(true, random), pos);
@@ -99,15 +100,29 @@ public class ShipwreckGen implements IWorldGenerator{
 			//check if the object is able to float, if no value set, assume that it can't float
 			Boolean canFloat = false;
 			
-			if(jsonObj.has("canFloat"))
-				canFloat = jsonObj.get("canFloat").getAsBoolean();
-			if(!canFloat || random.nextInt(20) != 0) //chance for structures that can float to not float REPLACE THIS WITH A VARIABLE IN THE CONFIG
-				pos = findSeafloor(world, pos);
+			//if(jsonObj.has("canfloat"))
+			//	canFloat = jsonObj.get("canfloat").getAsBoolean();
 			
-			addBlocksJson(world, jsonObj, pos, "hull", Blocks.PLANKS, orientation); //add ship hull to the world
-			addBlocksJson(world, jsonObj, pos, "mast", Blocks.LOG, orientation); //add ship mast to the world
-			addBlocksJson(world, jsonObj, pos, "chest", Blocks.CHEST, orientation); //add ship chests to the world
-			addBlocksJson(world, jsonObj, pos, "random", Blocks.LOG, orientation); //add blocks that appear in a random range around the ship to the world
+		//	if(canFloat && random.nextInt(2) == 0)
+				pos = pos.add(0, world.getSeaLevel() - pos.getY(), 0);
+			
+			//if(!canFloat || random.nextInt(2) != 0) //chance for structures that can float to not float REPLACE THIS WITH A VARIABLE IN THE CONFIG
+			//	pos = findSeafloor(world, pos);
+			
+			if(jsonObj.has("sections"))
+			{
+				JsonArray sections = jsonObj.getAsJsonArray("sections"); //get sections (an array of objects containing block types and coordinate)
+				
+				for(int i = 0; i < sections.size(); ++i) //loop through array and add each segment
+					addBlocksJson(world, sections.get(i).getAsJsonObject(), pos, "temp", Blocks.GOLD_BLOCK, orientation);
+			}
+			//add random features
+				
+			//addBlocksJson(world, jsonObj, pos, "hull", Block.getBlockFromName("minecraft:planks"), orientation); //add ship hull to the world
+			//addBlocksJson(world, jsonObj, pos, "deck", Block.getBlockFromName("minecraft:planks"), orientation); //add ship deck to the world
+			//addBlocksJson(world, jsonObj, pos, "mast", Blocks.LOG, orientation); //add ship mast to the world
+			//addBlocksJson(world, jsonObj, pos, "chest", Blocks.CHEST, orientation); //add ship chests to the world
+			//addBlocksJson(world, jsonObj, pos, "random", Blocks.LOG, orientation); //add blocks that appear in a random range around the ship to the world
 
 		} catch (JsonIOException e) {
 			e.printStackTrace();
@@ -127,7 +142,7 @@ public class ShipwreckGen implements IWorldGenerator{
 	{
 		int xVal = (pos.getX() / 16) % maxDist;
 		int zVal = (pos.getZ() / 16) % maxDist;
-		//wrecks can spawn only on (maxDist, Y, maxDist) nodes)
+		//wrecks can spawn only on (maxDist, Y, maxDist) nodes) but get offset a random distance from there
 		if(xVal == 0 && zVal == 0)
 			return true;
 		
@@ -139,6 +154,99 @@ public class ShipwreckGen implements IWorldGenerator{
 	 */
 	private void addBlocksJson(World world, JsonObject jsonObj, BlockPos pos, String structurePiece, Block block, int orientation)
 	{	
+		int subtype = -1; //value to specify variation on objects like wood planks (e.g. oak, spruce, etc)
+		
+		if(!jsonObj.has("block") || !jsonObj.has("coords")) //missing required field, don't know what block to add/where to put them
+			return;
+		
+		//get block type to add
+		String blockType = jsonObj.get("block").getAsString();
+		block = Block.getBlockFromName(blockType);
+		
+		if(block == null) //blockType incorrect, unknown block to add.
+			return;
+		
+		if(jsonObj.has("loot")) //process blocks with inventory differently (e.g. chests have loot tiers)
+		{
+			addChestsJson(world, jsonObj, pos, structurePiece, block, orientation);
+		}
+		else //regular blocks, no loot added to them
+		{
+			if(jsonObj.has("subtype")) //get block variation (e.g. oak or spruce for wood planks)
+				subtype = jsonObj.get("subtype").getAsInt();
+			
+			JsonArray blocks = jsonObj.getAsJsonArray("coords"); //array of block positions. "coords" existence checked at beginning of function
+			for(int i = 0; i < blocks.size(); ++i)
+			{
+				JsonArray posArray = blocks.get(i).getAsJsonArray(); //get first set of coords
+				
+				if(posArray.size() >= 3) //json array has at least 4 values (x, y, z, blockID)
+				{
+					int index = 0;
+					int x = posArray.get(index).getAsInt();
+					++index;
+					int y = posArray.get(index).getAsInt() - 1;
+					++index;
+					int z = posArray.get(index).getAsInt();
+					++index;
+					
+					//int blockID = posArray.get(3).getAsInt();
+					
+					//convert coords to correct position based on orientation
+					switch(orientation)
+					{
+						case 1: //West
+							x = -x;
+							break;
+						case 2: //North
+							int tempN = x;
+							x = z;
+							z = -tempN;
+							break;
+						case 3: //South
+							int tempS = x;
+							x = z;
+							z = tempS;
+							break;
+					}
+					
+					if(posArray.size() == 4) //add blocks with metadata
+					{
+						int md = posArray.get(index).getAsInt();
+						
+						//logs have annoying metadata. 4 = east/west, 8 = North/South, so if wreck is facing N/S (instead of default East), swap metadata
+						if(block == Blocks.LOG && (orientation == 2 || orientation == 3))
+						{
+							md = (md == 4) ? 8 : 4;
+						}
+						else
+						{
+							//convert metadata to face correct direction
+							switch(orientation)
+							{
+								case 1: //West
+									md = convertMetaWest(md);
+									break;
+								case 2: //North
+									md = convertMetaNorth(md);
+									break;
+								case 3: //South
+									md = convertMetaSouth(md);
+									break;
+							}
+						}
+						
+						addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block, md);
+					}
+					else if(subtype != -1)
+						addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block, subtype);
+					else//add blocks without metadata
+						addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block);
+				}
+			}
+		}
+		
+		/*
 		if(structurePiece.equalsIgnoreCase("chest"))
 		{
 			addChestsJson(world, jsonObj, pos, structurePiece, Blocks.CHEST, orientation);
@@ -157,11 +265,17 @@ public class ShipwreckGen implements IWorldGenerator{
 				{
 					JsonArray posArray = blocks.get(i).getAsJsonArray();
 
-					if(posArray.size() >= 3) //json array has at least 3 values (x, y, z)
+					if(posArray.size() >= 3) //json array has at least 4 values (x, y, z, blockID)
 					{
-						int x = posArray.get(0).getAsInt();
-						int y = posArray.get(1).getAsInt() - 1;
-						int z = posArray.get(2).getAsInt();
+						int index = 0;
+						int x = posArray.get(index).getAsInt();
+						++index;
+						int y = posArray.get(index).getAsInt() - 1;
+						++index;
+						int z = posArray.get(index).getAsInt();
+						++index;
+						
+						//int blockID = posArray.get(3).getAsInt();
 						
 						//convert coords to correct position based on orientation
 						switch(orientation)
@@ -183,7 +297,7 @@ public class ShipwreckGen implements IWorldGenerator{
 						
 						if(posArray.size() == 4) //add blocks with metadata
 						{
-							int md = posArray.get(3).getAsInt();
+							int md = posArray.get(index).getAsInt();
 							
 							//logs have annoying metadata. 4 = east/west, 8 = North/South, so if wreck is facing N/S (instead of default East), swap metadata
 							if(block == Blocks.LOG && (orientation == 2 || orientation == 3))
@@ -214,7 +328,7 @@ public class ShipwreckGen implements IWorldGenerator{
 					}
 				}
 			}
-		}
+		}*/
 	}
 	
 	/*
@@ -290,9 +404,15 @@ public class ShipwreckGen implements IWorldGenerator{
 							if(chest.get("coords").isJsonArray())
 							{
 								JsonArray posArray = chest.get("coords").getAsJsonArray();
-								int x = posArray.get(0).getAsInt();
-								int y = posArray.get(1).getAsInt() - 1;
-								int z = posArray.get(2).getAsInt();
+								int index = 0;
+								int x = posArray.get(index).getAsInt();
+								++index;
+								int y = posArray.get(index).getAsInt() - 1;
+								++index;
+								int z = posArray.get(index).getAsInt();
+								++index;
+								//block = Block.getBlockById(posArray.get(index).getAsInt());
+								//++index;
 								
 								//convert coords to correct position based on orientation
 								switch(orientation)
@@ -311,7 +431,7 @@ public class ShipwreckGen implements IWorldGenerator{
 										z = tempS;
 										break;
 								}
-								int md = posArray.get(3).getAsInt();
+								int md = posArray.get(index).getAsInt();
 								
 								//convert metadata to face correct direction
 								switch(orientation)
@@ -411,15 +531,15 @@ public class ShipwreckGen implements IWorldGenerator{
 	
 	/*
 	 * Finds the highest non-water/non-air block at the passed x and z coordinates
-	 * Returns the BlockPos for the found height and x and z coords
+	 * Returns the y coordinate for the found height and x and z coords
 	 */
-	private BlockPos findSeafloor(World world, BlockPos pos)
+	private int findSeafloor(World world, BlockPos pos)
 	{
 		//start at the highest block
 		while(world.getBlockState(pos).getBlock() == Blocks.WATER || world.getBlockState(pos).getBlock() == Blocks.AIR)
 			pos = pos.down();
 		
-		return pos;
+		return pos.getY();
 	}
 	
 	/*
