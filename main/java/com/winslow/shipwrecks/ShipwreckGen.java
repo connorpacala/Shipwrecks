@@ -66,9 +66,9 @@ public class ShipwreckGen implements IWorldGenerator{
 			pos = pos.add(newX, 0, newZ);
 			pos = pos.add(0, findSeafloor(world, pos), 0);
 			
-			if(biomeName.contains("ocean")) //check to generate ship in ocean
+			if(biomeName.indexOf("ocean") != -1) //check to generate ship in ocean
 				generateStructures(world, getStructureName(true, random), pos);
-			else if(biomeName.contains("beach")) //check to generate ship on beach
+			else if(biomeName.indexOf("beach") != -1) //check to generate ship on beach
 				generateStructures(world, getStructureName(false, random), pos);
 		}
 	}
@@ -111,19 +111,42 @@ public class ShipwreckGen implements IWorldGenerator{
 			
 			if(jsonObj.has("sections"))
 			{
-				JsonArray sections = jsonObj.getAsJsonArray("sections"); //get sections (an array of objects containing block types and coordinate)
+				JsonArray sections = jsonObj.getAsJsonArray("sections"); //get sections (an array of objects containing block types and coordinates)
 				
 				for(int i = 0; i < sections.size(); ++i) //loop through array and add each segment
-					addBlocksJson(world, sections.get(i).getAsJsonObject(), pos, "temp", Blocks.GOLD_BLOCK, orientation);
+					addBlocksJson(world, sections.get(i).getAsJsonObject(), pos, orientation);
 			}
-			//add random features
+			if(jsonObj.has("random"))
+			{
+				JsonArray sections = jsonObj.getAsJsonArray("random");
 				
-			//addBlocksJson(world, jsonObj, pos, "hull", Block.getBlockFromName("minecraft:planks"), orientation); //add ship hull to the world
-			//addBlocksJson(world, jsonObj, pos, "deck", Block.getBlockFromName("minecraft:planks"), orientation); //add ship deck to the world
-			//addBlocksJson(world, jsonObj, pos, "mast", Blocks.LOG, orientation); //add ship mast to the world
-			//addBlocksJson(world, jsonObj, pos, "chest", Blocks.CHEST, orientation); //add ship chests to the world
-			//addBlocksJson(world, jsonObj, pos, "random", Blocks.LOG, orientation); //add blocks that appear in a random range around the ship to the world
-
+				for(int i = 0; i < sections.size(); ++i) //loop through array and add each segment
+				{
+					JsonObject data = sections.get(i).getAsJsonObject();
+					
+					if(data.has("range"))
+					{
+						JsonArray range = data.getAsJsonArray("range");
+						
+						int min = range.get(0).getAsInt();
+						int max = range.get(1).getAsInt();
+						
+						int xOffset = min + random.nextInt(max - min);
+						int zOffset = min + random.nextInt(max - min);
+						
+						//50% chance to be negative x or y from center of wreck
+						if(random.nextInt(2) == 0)
+							xOffset *= -1;
+						if(random.nextInt(2) == 0)
+							zOffset *= -1;
+						
+						//find new position to act as (0, 0, 0) for random object
+						BlockPos newPos = new BlockPos(pos.getX() + xOffset, pos.getY(), pos.getZ() + zOffset);
+						
+						addBlocksJson(world, data, newPos, orientation);
+					}
+				}
+			}
 		} catch (JsonIOException e) {
 			e.printStackTrace();
 		} catch (JsonSyntaxException e) {
@@ -152,7 +175,7 @@ public class ShipwreckGen implements IWorldGenerator{
 	/*
 	 * adds blocks to the world with positions read from passed JsonObject 
 	 */
-	private void addBlocksJson(World world, JsonObject jsonObj, BlockPos pos, String structurePiece, Block block, int orientation)
+	private void addBlocksJson(World world, JsonObject jsonObj, BlockPos pos, int orientation)
 	{	
 		int subtype = -1; //value to specify variation on objects like wood planks (e.g. oak, spruce, etc)
 		
@@ -161,301 +184,84 @@ public class ShipwreckGen implements IWorldGenerator{
 		
 		//get block type to add
 		String blockType = jsonObj.get("block").getAsString();
-		block = Block.getBlockFromName(blockType);
+		Block block = Block.getBlockFromName(blockType);
 		
 		if(block == null) //blockType incorrect, unknown block to add.
 			return;
 		
 		if(jsonObj.has("loot")) //process blocks with inventory differently (e.g. chests have loot tiers)
 		{
-			addChestsJson(world, jsonObj, pos, structurePiece, block, orientation);
+			addChestsJson(world, jsonObj, pos, block, orientation);
 		}
 		else //regular blocks, no loot added to them
 		{
 			if(jsonObj.has("subtype")) //get block variation (e.g. oak or spruce for wood planks)
 				subtype = jsonObj.get("subtype").getAsInt();
 			
-			JsonArray blocks = jsonObj.getAsJsonArray("coords"); //array of block positions. "coords" existence checked at beginning of function
-			for(int i = 0; i < blocks.size(); ++i)
-			{
-				JsonArray posArray = blocks.get(i).getAsJsonArray(); //get first set of coords
-				
-				if(posArray.size() >= 3) //json array has at least 4 values (x, y, z, blockID)
-				{
-					int index = 0;
-					int x = posArray.get(index).getAsInt();
-					++index;
-					int y = posArray.get(index).getAsInt() - 1;
-					++index;
-					int z = posArray.get(index).getAsInt();
-					++index;
-					
-					//int blockID = posArray.get(3).getAsInt();
-					
-					//convert coords to correct position based on orientation
-					switch(orientation)
-					{
-						case 1: //West
-							x = -x;
-							break;
-						case 2: //North
-							int tempN = x;
-							x = z;
-							z = -tempN;
-							break;
-						case 3: //South
-							int tempS = x;
-							x = z;
-							z = tempS;
-							break;
-					}
-					
-					if(posArray.size() == 4) //add blocks with metadata
-					{
-						int md = posArray.get(index).getAsInt();
-						
-						//logs have annoying metadata. 4 = east/west, 8 = North/South, so if wreck is facing N/S (instead of default East), swap metadata
-						if(block == Blocks.LOG && (orientation == 2 || orientation == 3))
-						{
-							md = (md == 4) ? 8 : 4;
-						}
-						else
-						{
-							//convert metadata to face correct direction
-							switch(orientation)
-							{
-								case 1: //West
-									md = convertMetaWest(md);
-									break;
-								case 2: //North
-									md = convertMetaNorth(md);
-									break;
-								case 3: //South
-									md = convertMetaSouth(md);
-									break;
-							}
-						}
-						
-						addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block, md);
-					}
-					else if(subtype != -1)
-						addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block, subtype);
-					else//add blocks without metadata
-						addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block);
-				}
-			}
-		}
-		
-		/*
-		if(structurePiece.equalsIgnoreCase("chest"))
-		{
-			addChestsJson(world, jsonObj, pos, structurePiece, Blocks.CHEST, orientation);
-		}
-		else if(structurePiece.equalsIgnoreCase("random"))
-		{
-			addRandomBlocksJson(world, jsonObj, pos, structurePiece, block);
-		}
-		else if(jsonObj.has(structurePiece))
-		{
-			JsonArray blocks;
-			blocks = jsonObj.getAsJsonArray(structurePiece);
-			if(blocks != null)
-			{
-				for (int i = 0; i < blocks.size(); ++i)
-				{
-					JsonArray posArray = blocks.get(i).getAsJsonArray();
-
-					if(posArray.size() >= 3) //json array has at least 4 values (x, y, z, blockID)
-					{
-						int index = 0;
-						int x = posArray.get(index).getAsInt();
-						++index;
-						int y = posArray.get(index).getAsInt() - 1;
-						++index;
-						int z = posArray.get(index).getAsInt();
-						++index;
-						
-						//int blockID = posArray.get(3).getAsInt();
-						
-						//convert coords to correct position based on orientation
-						switch(orientation)
-						{
-							case 1: //West
-								x = -x;
-								break;
-							case 2: //North
-								int tempN = x;
-								x = z;
-								z = -tempN;
-								break;
-							case 3: //South
-								int tempS = x;
-								x = z;
-								z = tempS;
-								break;
-						}
-						
-						if(posArray.size() == 4) //add blocks with metadata
-						{
-							int md = posArray.get(index).getAsInt();
-							
-							//logs have annoying metadata. 4 = east/west, 8 = North/South, so if wreck is facing N/S (instead of default East), swap metadata
-							if(block == Blocks.LOG && (orientation == 2 || orientation == 3))
-							{
-								md = (md == 4) ? 8 : 4;
-							}
-							else
-							{
-								//convert metadata to face correct direction
-								switch(orientation)
-								{
-									case 1: //West
-										md = convertMetaWest(md);
-										break;
-									case 2: //North
-										md = convertMetaNorth(md);
-										break;
-									case 3: //South
-										md = convertMetaSouth(md);
-										break;
-								}
-							}
-							
-							addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block, md);
-						}
-						else //add blocks without metadata
-							addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block);
-					}
-				}
-			}
-		}*/
-	}
-	
-	/*
-	 * Add blocks to the structure that can be a random distance between a min and max value stored in the JSON file.
-	 */
-	private void addRandomBlocksJson(World world, JsonObject jsonObj, BlockPos pos, String structurePiece, Block block)
-	{
-		Random random = new Random();
-		
-		if(jsonObj.has(structurePiece))
-		{
-			JsonArray blocks;
-			blocks = jsonObj.getAsJsonArray(structurePiece); //get array of random objects
-			
-			if(blocks != null)
-			{
-				for(int i = 0; i < blocks.size(); ++i)
-				{
-					JsonObject obj = blocks.get(i).getAsJsonObject();
-					
-					//get key in Json object corresponding to object being added (e.g. get "chest" key and add a chest)
-					Set<Entry<String, JsonElement>> keys = obj.entrySet();
-					String structureName = "";
-					for(Map.Entry<String, JsonElement> key: keys) //get the last key in the object (should be the name of the object)
-						structureName = key.getKey();
-					
-					//get the random range (min, max) values to spawn object in
-					JsonArray range = obj.get("range").getAsJsonArray();
-					
-					int min = range.get(0).getAsInt();
-					int max = range.get(1).getAsInt();
-					
-					int xOffset = min + random.nextInt(max - min);
-					int zOffset = min + random.nextInt(max - min);
-					
-					//50% chance to be negative x or y from center of wreck
-					if(random.nextInt(2) == 0)
-						xOffset *= -1;
-					if(random.nextInt(2) == 0)
-						zOffset *= -1;
-					
-					//find new position to act as (0, 0, 0) for random object
-					BlockPos newPos = new BlockPos(pos.getX() + xOffset, pos.getY(), pos.getZ() + zOffset);
-					
-					addBlocksJson(world, obj, newPos, structureName, block, random.nextInt(4));
-				}
-			}
+			JsonArray coords = jsonObj.getAsJsonArray("coords"); //array of block positions. "coords" existence checked at beginning of function
+			addBlocksFromArray(world, pos, coords, block, subtype, orientation);
 		}
 	}
 	
 	/*
 	 * Attempts to add chests from the passed json file to the world
 	 */
-	private void addChestsJson(World world, JsonObject jsonObj, BlockPos pos, String structurePiece, Block block, int orientation) //add ship mast to the world
+	private void addChestsJson(World world, JsonObject jsonObj, BlockPos pos, Block block, int orientation) //add ship mast to the world
 	{
-		if(jsonObj.has(structurePiece))
+		JsonArray posArray = jsonObj.getAsJsonArray("coords"); //get array of chest objects
+		//add appropriate loot based on the loot pool that 
+		int lootPool = jsonObj.get("loot").getAsInt();
+		int numLoops = (posArray.get(0).isJsonArray()) ? posArray.size() : 1; //1 loop if not an array (single entry). Fixes an error when reading an array of one value
+		
+		for(int i = 0; i < numLoops; ++i)
 		{
-			JsonArray blocks;
-			blocks = jsonObj.getAsJsonArray(structurePiece); //get array of chest objects
+			JsonArray coords = (posArray.get(0).isJsonArray()) ? posArray.get(i).getAsJsonArray() : posArray;
 			
-			if(blocks != null)
+			int index = 0;
+			int x = coords.get(index).getAsInt();
+			++index;
+			int y = coords.get(index).getAsInt() - 1;
+			++index;
+			int z = coords.get(index).getAsInt();
+			++index;
+			//block = Block.getBlockById(posArray.get(index).getAsInt());
+			//++index;
+			
+			//convert coords to correct position based on orientation
+			switch(orientation)
 			{
-				//cycle through chest objects, add chest, and add chest loot
-				for (int i = 0; i < blocks.size(); ++i)
-				{
-					if(blocks.get(i).isJsonObject()) //make sure that blocks is an array of JSON objects
-					{
-						JsonObject chest = blocks.get(i).getAsJsonObject();
-						
-						if(chest != null)
-						{
-							//coordinates for the chest
-							if(chest.get("coords").isJsonArray())
-							{
-								JsonArray posArray = chest.get("coords").getAsJsonArray();
-								int index = 0;
-								int x = posArray.get(index).getAsInt();
-								++index;
-								int y = posArray.get(index).getAsInt() - 1;
-								++index;
-								int z = posArray.get(index).getAsInt();
-								++index;
-								//block = Block.getBlockById(posArray.get(index).getAsInt());
-								//++index;
-								
-								//convert coords to correct position based on orientation
-								switch(orientation)
-								{
-									case 1: //West
-										x = -x;
-										break;
-									case 2: //North
-										int tempN = x;
-										x = z;
-										z = -tempN;
-										break;
-									case 3: //South
-										int tempS = x;
-										x = z;
-										z = tempS;
-										break;
-								}
-								int md = posArray.get(index).getAsInt();
-								
-								//convert metadata to face correct direction
-								switch(orientation)
-								{
-									case 1: //West
-										md = convertMetaWest(md);
-										break;
-									case 2: //North
-										md = convertMetaNorth(md);
-										break;
-									case 3: //South
-										md = convertMetaSouth(md);
-										break;
-								}
-								addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block, md);
-								
-								//add appropriate loot based on the loot pool that 
-								int lootPool = chest.get("loot").getAsInt();
-								addChestLoot(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, lootPool);
-							}
-						}
-					}
-				}
+				case 1: //West
+					x = -x;
+					break;
+				case 2: //North
+					int tempN = x;
+					x = z;
+					z = -tempN;
+					break;
+				case 3: //South
+					int tempS = x;
+					x = z;
+					z = tempS;
+					break;
 			}
+			int md = coords.get(index).getAsInt();
+			
+			//convert metadata to face correct direction
+			switch(orientation)
+			{
+				case 1: //West
+					md = convertMetaWest(md);
+					break;
+				case 2: //North
+					md = convertMetaNorth(md);
+					break;
+				case 3: //South
+					md = convertMetaSouth(md);
+					break;
+			}
+			
+			addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block, md);
+			addChestLoot(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, lootPool);
 		}
 	}
 	
@@ -466,16 +272,16 @@ public class ShipwreckGen implements IWorldGenerator{
 	{
 		switch(md)
 		{
-			case 2:
+			case 2:	//Originally North
 				md = 3;
 				break;
-			case 3:
+			case 3:	//Originally South
 				md = 2;
 				break;
-			case 4:
+			case 4:	//Originally West
 				md = 5;
 				break;
-			case 5:
+			case 5:	//Originally East
 				md = 4;
 				break;
 		}
@@ -489,16 +295,16 @@ public class ShipwreckGen implements IWorldGenerator{
 	{
 		switch(md)
 		{
-			case 2:
+			case 2:	//Originally North
 				md = 4;
 				break;
-			case 3:
+			case 3:	//Originally South
 				md = 5;
 				break;
-			case 4:
+			case 4:	//Originally West
 				md = 3;
 				break;
-			case 5:
+			case 5:	//Originally East
 				md = 2;
 				break;
 		}
@@ -512,17 +318,110 @@ public class ShipwreckGen implements IWorldGenerator{
 	{
 		switch(md)
 		{
-			case 2:
+			case 2:	//Originally North
 				md = 5;
 				break;
-			case 3:
+			case 3:	//Originally South
 				md = 4;
 				break;
-			case 4:
+			case 4:	//Originally West
 				md = 2;
 				break;
-			case 5:
+			case 5:	//Originally East
 				md = 3;
+				break;
+		}
+		return md;
+	}
+	
+	/*
+	 * Converts passed metadata from east facing BP to value for West facing spawns
+	 */
+	private int convertMetaStairWest(int md)
+	{
+		switch(md)
+		{
+			case 0:	//Originally East
+				md = 1;
+				break;
+			case 1:	//Originally West
+				md = 0;
+				break;
+			case 4:	//Originally East
+				md = 5;
+				break;
+			case 5:	//Originally West
+				md = 4;
+				break;
+		}
+		return md;
+	}
+	
+	/*
+	 * Converts passed metadata from east facing BP to value for North facing spawns
+	 */
+	private int convertMetaStairNorth(int md)
+	{
+		switch(md)
+		{
+			case 0:	//Originally East
+				md = 3;
+				break;
+			case 1:	//Originally West
+				md = 2;
+				break;
+			case 2:	//Originally South
+				md = 0;
+				break;
+			case 3:	//Originally North
+				md = 1;
+				break;
+			case 4:	//Originally East
+				md = 7;
+				break;
+			case 5:	//Originally West
+				md = 6;
+				break;
+			case 6:	//Originally South
+				md = 4;
+				break;
+			case 7:	//Originally North
+				md = 5;
+				break;
+		}
+		return md;
+	}
+	
+	/*
+	 * Converts passed metadata from east facing BP to value for South facing spawns
+	 */
+	private int convertMetaStairSouth(int md)
+	{
+		switch(md)
+		{
+			case 0:	//Originally East
+				md = 2;
+				break;
+			case 1:	//Originally West
+				md = 3;
+				break;
+			case 2:	//Originally South
+				md = 0;
+				break;
+			case 3:	//Originally North
+				md = 1;
+				break;
+			case 4:	//Originally East
+				md = 6;
+				break;
+			case 5:	//Originally West
+				md = 7;
+				break;
+			case 6:	//Originally South
+				md = 4;
+				break;
+			case 7:	//Originally North
+				md = 5;
 				break;
 		}
 		return md;
@@ -540,6 +439,93 @@ public class ShipwreckGen implements IWorldGenerator{
 			pos = pos.down();
 		
 		return pos.getY();
+	}
+	
+	/*
+	 * Loops through an array of coordinates and adds blocks of type block with the correct orientation
+	 */
+	private void addBlocksFromArray(World world, BlockPos pos, JsonArray coords, Block block, int subtype, int orientation)
+	{
+		Boolean isStair = false;
+		Boolean isFenceGate = false;
+		
+		if(block.getUnlocalizedName().indexOf("stair") != -1)
+			isStair = true;
+		else if(block.getUnlocalizedName().indexOf("fence_gate") != -1)
+			isFenceGate = true;
+		
+		for(int i = 0; i < coords.size(); ++i)
+		{
+			JsonArray posArray = coords.get(i).getAsJsonArray(); //get first set of coords
+			
+			if(posArray.size() >= 3) //json array has at least 3 values (x, y, z)
+			{
+				int index = 0;
+				int x = posArray.get(index).getAsInt();
+				++index;
+				int y = posArray.get(index).getAsInt() - 1;
+				++index;
+				int z = posArray.get(index).getAsInt();
+				++index;
+				
+				//int blockID = posArray.get(3).getAsInt();
+				
+				//convert coords to correct position based on orientation
+				switch(orientation)
+				{
+					case 1: //West
+						x = -x;
+						break;
+					case 2: //North
+						int tempN = x;
+						x = z;
+						z = -tempN;
+						break;
+					case 3: //South
+						int tempS = x;
+						x = z;
+						z = tempS;
+						break;
+				}
+				
+				if(posArray.size() == 4) //add blocks with metadata
+				{
+					int md = posArray.get(index).getAsInt();
+					
+					//logs have annoying metadata. 4 = east/west, 8 = North/South, so if wreck is facing N/S (instead of default East), swap metadata
+					if(block == Blocks.LOG && (orientation == 2 || orientation == 3))
+					{
+						md = (md == 4) ? 8 : 4;
+					}
+					else
+					{
+						//convert metadata to face correct direction
+						switch(orientation)
+						{
+							case 1: //West
+								md = (isStair) ? convertMetaStairWest(md) : convertMetaWest(md);
+								break;
+							case 2: //North
+								md = (isStair) ? convertMetaStairNorth(md) : convertMetaNorth(md);
+								break;
+							case 3: //South
+								md = (isStair) ? convertMetaStairSouth(md) : convertMetaSouth(md);
+								break;
+						}
+					}
+					
+					//metadata controls position, subtype controls material variation. Need to be added to get correct block.
+					if(subtype != -1)
+						md += subtype;
+					
+					addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block, md);
+				}
+				else if(subtype != -1)
+					addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block, subtype);
+				else//add blocks without metadata
+					addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block);
+			}
+		}
 	}
 	
 	/*
