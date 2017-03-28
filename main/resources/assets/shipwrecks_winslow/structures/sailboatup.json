@@ -101,7 +101,9 @@
 		{
 			"block": "minecraft:chest",
 			"loot": 1,
-			"coords": [2, 2, 0, 4]
+			"coords": [
+				[2, 2, 0, 4]
+			]
 		}
 	]
 }

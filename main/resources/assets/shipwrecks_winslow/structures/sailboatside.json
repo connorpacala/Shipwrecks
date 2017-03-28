@@ -82,14 +82,16 @@
 				[0, 1, 1, 8],
 				[0, 1, 2, 8]
 			]
-		}	
+		}
 	],
 	"random": [
 		{
 			"range": [6, 20],
 			"block": "minecraft:chest",
 			"loot": 1,
-			"coords": [2, 0, 0, 4]
+			"coords": [
+				[2, 0, 0, 4]
+			]
 		},
 		{
 			"range": [6, 20],
