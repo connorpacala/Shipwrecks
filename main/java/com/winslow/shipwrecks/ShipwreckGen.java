@@ -95,7 +95,7 @@ public class ShipwreckGen implements IWorldGenerator{
 			JsonObject jsonObj = (JsonObject) parser.parse(textFile);
 			
 			Random random = new Random();
-			int orientation = random.nextInt(4); //N, W, S, E orientation
+			int orientation = random.nextInt(4); //E, W, N, S orientation
 			
 			//check if the object is able to float, if no value set, assume that it can't float
 			Boolean canFloat = false;
@@ -232,14 +232,15 @@ public class ShipwreckGen implements IWorldGenerator{
 			{
 				case 1: //West
 					x = -x;
+					z = -z;
 					break;
 				case 2: //North
 					int tempN = x;
-					x = z;
-					z = -tempN;
+					x = -z;
+					z = tempN;
 					break;
 				case 3: //South
-					int tempS = x;
+					int tempS = -x;
 					x = z;
 					z = tempS;
 					break;
@@ -296,16 +297,16 @@ public class ShipwreckGen implements IWorldGenerator{
 		switch(md)
 		{
 			case 2:	//Originally North
-				md = 4;
-				break;
-			case 3:	//Originally South
 				md = 5;
 				break;
+			case 3:	//Originally South
+				md = 4;
+				break;
 			case 4:	//Originally West
-				md = 3;
+				md = 2;
 				break;
 			case 5:	//Originally East
-				md = 2;
+				md = 3;
 				break;
 		}
 		return md;
@@ -319,16 +320,16 @@ public class ShipwreckGen implements IWorldGenerator{
 		switch(md)
 		{
 			case 2:	//Originally North
-				md = 5;
-				break;
-			case 3:	//Originally South
 				md = 4;
 				break;
+			case 3:	//Originally South
+				md = 5;
+				break;
 			case 4:	//Originally West
-				md = 2;
+				md = 3;
 				break;
 			case 5:	//Originally East
-				md = 3;
+				md = 2;
 				break;
 		}
 		return md;
@@ -347,11 +348,23 @@ public class ShipwreckGen implements IWorldGenerator{
 			case 1:	//Originally West
 				md = 0;
 				break;
+			case 2:	//Originally South
+				md = 3;
+				break;
+			case 3:	//Originally North
+				md = 2;
+				break;
 			case 4:	//Originally East
 				md = 5;
 				break;
 			case 5:	//Originally West
 				md = 4;
+				break;
+			case 6:	//Originally South
+				md = 7;
+				break;
+			case 7:	//Originally North
+				md = 6;
 				break;
 		}
 		return md;
@@ -365,28 +378,28 @@ public class ShipwreckGen implements IWorldGenerator{
 		switch(md)
 		{
 			case 0:	//Originally East
-				md = 3;
-				break;
-			case 1:	//Originally West
 				md = 2;
 				break;
-			case 2:	//Originally South
-				md = 0;
+			case 1:	//Originally West
+				md = 3;
 				break;
-			case 3:	//Originally North
+			case 2:	//Originally South
 				md = 1;
 				break;
-			case 4:	//Originally East
-				md = 7;
+			case 3:	//Originally North
+				md = 0;
 				break;
-			case 5:	//Originally West
+			case 4:	//Originally East
 				md = 6;
 				break;
+			case 5:	//Originally West
+				md = 7;
+				break;
 			case 6:	//Originally South
-				md = 4;
+				md = 5;
 				break;
 			case 7:	//Originally North
-				md = 5;
+				md = 4;
 				break;
 		}
 		return md;
@@ -400,10 +413,10 @@ public class ShipwreckGen implements IWorldGenerator{
 		switch(md)
 		{
 			case 0:	//Originally East
-				md = 2;
+				md = 3;
 				break;
 			case 1:	//Originally West
-				md = 3;
+				md = 2;
 				break;
 			case 2:	//Originally South
 				md = 0;
@@ -412,10 +425,10 @@ public class ShipwreckGen implements IWorldGenerator{
 				md = 1;
 				break;
 			case 4:	//Originally East
-				md = 6;
+				md = 7;
 				break;
 			case 5:	//Originally West
-				md = 7;
+				md = 6;
 				break;
 			case 6:	//Originally South
 				md = 4;
@@ -475,14 +488,15 @@ public class ShipwreckGen implements IWorldGenerator{
 				{
 					case 1: //West
 						x = -x;
+						z = -z;
 						break;
 					case 2: //North
 						int tempN = x;
-						x = z;
-						z = -tempN;
+						x = -z;
+						z = tempN;
 						break;
 					case 3: //South
-						int tempS = x;
+						int tempS = -x;
 						x = z;
 						z = tempS;
 						break;
@@ -492,10 +506,11 @@ public class ShipwreckGen implements IWorldGenerator{
 				{
 					int md = posArray.get(index).getAsInt();
 					
-					//logs have annoying metadata. 4 = east/west, 8 = North/South, so if wreck is facing N/S (instead of default East), swap metadata
-					if(block == Blocks.LOG && (orientation == 2 || orientation == 3))
+					if(block == Blocks.LOG)
 					{
-						md = (md == 4) ? 8 : 4;
+						//logs have annoying metadata. 4 = east/west, 8 = North/South, so if wreck is facing N/S (instead of default East), swap metadata
+						if(orientation == 2 || orientation == 3)
+							md = (md == 4) ? 8 : 4;
 					}
 					else
 					{
