@@ -545,6 +545,13 @@
 			]
 		},
 		{
+			"block": "minecraft:chest",
+			"loot": 1,
+			"coords": [
+				[-10, 1, 0, 5]
+			]
+		},
+		{
 			"block": "minecraft:pumpkin",
 			"coords": [
 				[0, 1, -2]
@@ -591,6 +598,18 @@
 				[0, 4, -4, 2],
 				[8, 4, 2, 5],
 				[8, 4, -2, 5]
+			]
+		},
+		{
+			"block": "minecraft:fence",
+			"coords": [
+				[-7, 4, 0]
+			]
+		},
+		{
+			"block": "minecraft:fence_gate",
+			"coords": [
+				[-8, 4, 0, 1]
 			]
 		}
 	]
