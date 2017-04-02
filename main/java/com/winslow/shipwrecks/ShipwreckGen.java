@@ -440,6 +440,38 @@ public class ShipwreckGen implements IWorldGenerator{
 		return md;
 	}
 	
+	/*
+	 * Converts passed metadata from East facing BP to value for West facing spawns
+	 */
+	private int convertMetaFenceGateWest(int md)
+	{
+		md += 2;
+		while(md >= 4)
+			md -= 4;
+		return md;
+	}
+	
+	/*
+	 * Converts passed metadata from East facing BP to value for North facing spawns
+	 */
+	private int convertMetaFenceGateNorth(int md)
+	{
+		md += 1;
+		while(md >= 4)
+			md -= 4;
+		return md;
+	}
+	
+	/*
+	 * Converts passed metadata from East facing BP to value for South facing spawns
+	 */
+	private int convertMetaFenceGateSouth(int md)
+	{
+		md += 3;
+		while(md >= 4)
+			md -= 4;
+		return md;
+	}
 	
 	/*
 	 * Finds the highest non-water/non-air block at the passed x and z coordinates
@@ -464,8 +496,10 @@ public class ShipwreckGen implements IWorldGenerator{
 		
 		if(block.getUnlocalizedName().indexOf("stair") != -1)
 			isStair = true;
-		else if(block.getUnlocalizedName().indexOf("fence_gate") != -1)
+		else if(block.getUnlocalizedName().indexOf("fenceGate") != -1)
 			isFenceGate = true;
+		
+		
 		
 		for(int i = 0; i < coords.size(); ++i)
 		{
@@ -518,13 +552,28 @@ public class ShipwreckGen implements IWorldGenerator{
 						switch(orientation)
 						{
 							case 1: //West
-								md = (isStair) ? convertMetaStairWest(md) : convertMetaWest(md);
+								if(isStair)
+									md = convertMetaStairWest(md);
+								else if(isFenceGate)
+									md = convertMetaFenceGateWest(md);
+								else
+									md = convertMetaWest(md);
 								break;
 							case 2: //North
-								md = (isStair) ? convertMetaStairNorth(md) : convertMetaNorth(md);
+								if(isStair)
+									md = convertMetaStairNorth(md);
+								else if(isFenceGate)
+									md = convertMetaFenceGateNorth(md);
+								else
+									md = convertMetaNorth(md);
 								break;
 							case 3: //South
-								md = (isStair) ? convertMetaStairSouth(md) : convertMetaSouth(md);
+								if(isStair)
+									md = convertMetaStairSouth(md);
+								else if(isFenceGate)
+									md = convertMetaFenceGateSouth(md);
+								else
+									md = convertMetaSouth(md);
 								break;
 						}
 					}
