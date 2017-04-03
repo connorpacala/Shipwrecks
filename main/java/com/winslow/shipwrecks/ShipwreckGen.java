@@ -116,7 +116,7 @@ public class ShipwreckGen implements IWorldGenerator{
 				for(int i = 0; i < sections.size(); ++i) //loop through array and add each segment
 					addBlocksJson(world, sections.get(i).getAsJsonObject(), pos, orientation);
 			}
-			if(jsonObj.has("random"))
+			if(jsonObj.has("random")) //structure pieces that can appear a random orientation and distance from the center of the structure
 			{
 				JsonArray sections = jsonObj.getAsJsonArray("random");
 				
@@ -144,6 +144,31 @@ public class ShipwreckGen implements IWorldGenerator{
 						BlockPos newPos = new BlockPos(pos.getX() + xOffset, pos.getY(), pos.getZ() + zOffset);
 						
 						addBlocksJson(world, data, newPos, orientation);
+					}
+				}
+			}
+			if(jsonObj.has("chance_sections")) //sections that have a given chance to spawn
+			{
+				JsonArray chance_sections = jsonObj.getAsJsonArray("chance_sections");
+				for(int i = 0; i < chance_sections.size(); ++i)
+				{
+					JsonObject data = chance_sections.get(i).getAsJsonObject();
+					Boolean isExclusive = false;
+					if(data.has("exclusive"))
+						isExclusive = data.get("exclusive").getAsBoolean();
+					
+					if(!data.has("chance")) //these sections require a weight field
+						return;
+					JsonArray chance = data.getAsJsonArray("chance");
+					JsonArray sections = data.getAsJsonArray("sections"); //get sections (an array of objects containing block types and coordinates)
+					
+					for(int j = 0; i < sections.size() && i < chance.size(); ++i)
+					{
+						int value = chance.get(j).getAsInt();
+						if(random.nextInt(chance.get(j).getAsInt()) == 0)
+							addBlocksJson(world, sections.get(i).getAsJsonObject(), pos, orientation);
+						if(isExclusive)
+							break;
 					}
 				}
 			}
