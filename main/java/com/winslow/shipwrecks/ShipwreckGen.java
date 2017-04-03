@@ -160,15 +160,19 @@ public class ShipwreckGen implements IWorldGenerator{
 					if(!data.has("chance")) //these sections require a weight field
 						return;
 					JsonArray chance = data.getAsJsonArray("chance");
-					JsonArray sections = data.getAsJsonArray("sections"); //get sections (an array of objects containing block types and coordinates)
+					JsonArray sections = data.getAsJsonArray("chance_blocks"); //get sections (an array of objects containing block types and coordinates)
 					
-					for(int j = 0; i < sections.size() && i < chance.size(); ++i)
+					for(int j = 0; j < sections.size() && j < chance.size(); ++j)
 					{
-						int value = chance.get(j).getAsInt();
 						if(random.nextInt(chance.get(j).getAsInt()) == 0)
-							addBlocksJson(world, sections.get(i).getAsJsonObject(), pos, orientation);
-						if(isExclusive)
-							break;
+						{
+							JsonArray coords = sections.get(j).getAsJsonArray();
+							for(int k = 0; k < coords.size(); ++k)
+								addBlocksJson(world, coords.get(k).getAsJsonObject(), pos, orientation);
+							
+							if(isExclusive)
+								break;
+						}
 					}
 				}
 			}
