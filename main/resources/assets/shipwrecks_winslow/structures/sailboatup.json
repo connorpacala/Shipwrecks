@@ -3,7 +3,7 @@
 	"sections": [
 		{
 			"block": "minecraft:planks",
-			"subtype": 1,
+			"variant": "SPRUCE",
 			"coords": [
 				[0, 0, 0],
 				[0, 1, 1],
@@ -85,7 +85,8 @@
 		},
 		{
 			"block": "minecraft:log",
-			"subtype": 3,
+			"variant": "JUNGLE",
+			"facing": "Y",
 			"coords": [
 				[0, 1, 0],
 				[0, 2, 0],
@@ -101,8 +102,9 @@
 		{
 			"block": "minecraft:chest",
 			"loot": 1,
+			"facing": "WEST",
 			"coords": [
-				[2, 2, 0, 4]
+				[2, 2, 0]
 			]
 		}
 	]
