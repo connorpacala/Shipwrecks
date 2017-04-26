@@ -3,25 +3,37 @@ package com.winslow.shipwrecks;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Map;
-import java.util.Map.Entry;
+import java.util.Collection;
 import java.util.Random;
-import java.util.Set;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockBed;
+import net.minecraft.block.BlockBed.EnumPartType;
+import net.minecraft.block.BlockLog.EnumAxis;
+import net.minecraft.block.BlockOldLog;
+import net.minecraft.block.BlockPlanks;
+import net.minecraft.block.BlockPlanks.EnumType;
+import net.minecraft.block.BlockSlab;
+import net.minecraft.block.BlockSlab.EnumBlockHalf;
+import net.minecraft.block.BlockStairs;
+import net.minecraft.block.BlockStairs.EnumHalf;
+import net.minecraft.block.properties.IProperty;
+import net.minecraft.block.properties.PropertyDirection;
+import net.minecraft.block.properties.PropertyEnum;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntityChest;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
@@ -206,11 +218,9 @@ public class ShipwreckGen implements IWorldGenerator{
 	 */
 	private void addBlocksJson(World world, JsonObject jsonObj, BlockPos pos, int orientation)
 	{	
-		int subtype = -1; //value to specify variation on objects like wood planks (e.g. oak, spruce, etc)
-		
 		if(!jsonObj.has("block") || !jsonObj.has("coords")) //missing required field, don't know what block to add/where to put them
 			return;
-		
+	
 		//get block type to add
 		String blockType = jsonObj.get("block").getAsString();
 		Block block = Block.getBlockFromName(blockType);
@@ -218,17 +228,84 @@ public class ShipwreckGen implements IWorldGenerator{
 		if(block == null) //blockType incorrect, unknown block to add.
 			return;
 		
+		String variant = ""; //value to specify variation on objects like wood planks (e.g. oak, spruce, etc)
+		if(jsonObj.has("variant")) //get block variation (e.g. oak or spruce for wood planks)
+			variant = jsonObj.get("variant").getAsString();
+		
+		String facing = "";
+		if(jsonObj.has("facing"))
+			facing = jsonObj.get("facing").getAsString();
+		
+		String half = ""; //value to specify variation on objects like wood slabs (e.g. top/bottom)
+		if(jsonObj.has("half"))
+			half = jsonObj.get("half").getAsString();
+		
+		String part = ""; //value to specify variation on objects like beds (e.g. head/foot)
+		if(jsonObj.has("part"))
+			part = jsonObj.get("part").getAsString();
+		
+		IBlockState blkState = block.getDefaultState();
+		
+		Collection<IProperty<?>> properties = block.getDefaultState().getPropertyKeys();
+		PropertyDirection FACING = PropertyDirection.create("facing", EnumFacing.Plane.HORIZONTAL);
+		PropertyEnum<EnumAxis> AXIS = PropertyEnum.create("axis", EnumAxis.class);
+		
+		System.out.println(block.getUnlocalizedName());
+		
+		//if(!facing.isEmpty())
+		//{
+		//	if(block == Blocks.DISPENSER)
+		//		System.out.println(properties.toString());
+			//Blocks can either have the facing property or the axis property but not both...at least it wouldn't make sense to have both
+		if(properties.contains(FACING))
+		{
+			blkState = blkState.withProperty(FACING, getFacing(orientation, facing));
+		}
+		else if(properties.contains(AXIS))
+		{
+			blkState = blkState.withProperty(AXIS, getAxis(orientation, facing));
+		}
+		//}
+		
+		if(!variant.isEmpty())
+		{
+			PropertyEnum<EnumType> VARIANT;
+			if(block.getUnlocalizedName().indexOf("log") != -1)
+				VARIANT = BlockOldLog.VARIANT;
+			else //if(block.getUnlocalizedName().indexOf("plank") != -1)
+				VARIANT = BlockPlanks.VARIANT;
+			blkState = blkState.withProperty(VARIANT, EnumType.valueOf(variant));
+		}
+		
+		if(!half.isEmpty())
+		{
+			if(block.getUnlocalizedName().indexOf("stair") != -1)
+			{
+				PropertyEnum<EnumHalf> HALF = BlockStairs.HALF;
+				blkState = blkState.withProperty(HALF, EnumHalf.valueOf(half));
+			}
+			else
+			{
+				PropertyEnum<EnumBlockHalf> HALF = BlockSlab.HALF;
+				blkState = blkState.withProperty(HALF, EnumBlockHalf.valueOf(half));
+			}
+		}
+		
+		if(!part.isEmpty())
+		{
+			PropertyEnum<EnumPartType> PART = BlockBed.PART;
+			blkState = blkState.withProperty(PART, EnumPartType.valueOf(part));
+		}
+		
+		
 		if(jsonObj.has("loot")) //process blocks with inventory differently (e.g. chests have loot tiers)
 		{
 			addChestsJson(world, jsonObj, pos, block, orientation);
 		}
 		else //regular blocks, no loot added to them
 		{
-			if(jsonObj.has("subtype")) //get block variation (e.g. oak or spruce for wood planks)
-				subtype = jsonObj.get("subtype").getAsInt();
-			
 			JsonArray coords = jsonObj.getAsJsonArray("coords"); //array of block positions. "coords" existence checked at beginning of function
-			addBlocksFromArray(world, pos, coords, block, subtype, orientation);
+			addBlocksFromArray(world, pos, coords, blkState, variant, orientation, facing);
 		}
 	}
 	
@@ -240,6 +317,7 @@ public class ShipwreckGen implements IWorldGenerator{
 		JsonArray posArray = jsonObj.getAsJsonArray("coords"); //get array of chest objects
 		//add appropriate loot based on the loot pool that 
 		int lootPool = jsonObj.get("loot").getAsInt();
+		String facing = jsonObj.get("facing").getAsString();
 		int numLoops = (posArray.get(0).isJsonArray()) ? posArray.size() : 1; //1 loop if not an array (single entry). Fixes an error when reading an array of one value
 		
 		for(int i = 0; i < numLoops; ++i)
@@ -274,232 +352,50 @@ public class ShipwreckGen implements IWorldGenerator{
 					z = tempS;
 					break;
 			}
-			int md = coords.get(index).getAsInt();
+			//int md = coords.get(index).getAsInt();
 			
-			//convert metadata to face correct direction
-			switch(orientation)
-			{
-				case 1: //West
-					md = convertMetaWest(md);
-					break;
-				case 2: //North
-					md = convertMetaNorth(md);
-					break;
-				case 3: //South
-					md = convertMetaSouth(md);
-					break;
-			}
-			
-			addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block, md);
+			addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block, getFacing(orientation, facing));
 			addChestLoot(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, lootPool);
 		}
 	}
 	
-	/*
-	 * Converts passed metadata from east facing BP to value for West facing spawns
-	 */
-	private int convertMetaWest(int md)
+	//Get the facing direction and rotate the face of the object from the default East facing to the 
+	//correct facing for W, N, or S facing structures
+	private EnumFacing getFacing(int orientation, String facing)
 	{
-		switch(md)
+		
+		EnumFacing dir = EnumFacing.byName(facing);//EnumFacing.EAST;
+		
+		switch(orientation)
 		{
-			case 2:	//Originally North
-				md = 3;
+			case 1:	//West
+				dir = dir.rotateY();
+				dir = dir.rotateY();
 				break;
-			case 3:	//Originally South
-				md = 2;
+			case 2:	//North
+				dir = dir.rotateY();
 				break;
-			case 4:	//Originally West
-				md = 5;
-				break;
-			case 5:	//Originally East
-				md = 4;
+			case 3:	//South
+				dir = dir.rotateYCCW();
 				break;
 		}
-		return md;
+		
+		return dir;
 	}
 	
-	/*
-	 * Converts passed metadata from east facing BP to value for North facing spawns
-	 */
-	private int convertMetaNorth(int md)
+	//Get the axis direction and rotate the object from the default East facing to the 
+	//correct facing for W, N, or S facing structures
+	private EnumAxis getAxis(int orientation, String facing)
 	{
-		switch(md)
-		{
-			case 2:	//Originally North
-				md = 5;
-				break;
-			case 3:	//Originally South
-				md = 4;
-				break;
-			case 4:	//Originally West
-				md = 2;
-				break;
-			case 5:	//Originally East
-				md = 3;
-				break;
-		}
-		return md;
-	}
-	
-	/*
-	 * Converts passed metadata from east facing BP to value for South facing spawns
-	 */
-	private int convertMetaSouth(int md)
-	{
-		switch(md)
-		{
-			case 2:	//Originally North
-				md = 4;
-				break;
-			case 3:	//Originally South
-				md = 5;
-				break;
-			case 4:	//Originally West
-				md = 3;
-				break;
-			case 5:	//Originally East
-				md = 2;
-				break;
-		}
-		return md;
-	}
-	
-	/*
-	 * Converts passed metadata from east facing BP to value for West facing spawns
-	 */
-	private int convertMetaStairWest(int md)
-	{
-		switch(md)
-		{
-			case 0:	//Originally East
-				md = 1;
-				break;
-			case 1:	//Originally West
-				md = 0;
-				break;
-			case 2:	//Originally South
-				md = 3;
-				break;
-			case 3:	//Originally North
-				md = 2;
-				break;
-			case 4:	//Originally East
-				md = 5;
-				break;
-			case 5:	//Originally West
-				md = 4;
-				break;
-			case 6:	//Originally South
-				md = 7;
-				break;
-			case 7:	//Originally North
-				md = 6;
-				break;
-		}
-		return md;
-	}
-	
-	/*
-	 * Converts passed metadata from east facing BP to value for North facing spawns
-	 */
-	private int convertMetaStairNorth(int md)
-	{
-		switch(md)
-		{
-			case 0:	//Originally East
-				md = 2;
-				break;
-			case 1:	//Originally West
-				md = 3;
-				break;
-			case 2:	//Originally South
-				md = 1;
-				break;
-			case 3:	//Originally North
-				md = 0;
-				break;
-			case 4:	//Originally East
-				md = 6;
-				break;
-			case 5:	//Originally West
-				md = 7;
-				break;
-			case 6:	//Originally South
-				md = 5;
-				break;
-			case 7:	//Originally North
-				md = 4;
-				break;
-		}
-		return md;
-	}
-	
-	/*
-	 * Converts passed metadata from east facing BP to value for South facing spawns
-	 */
-	private int convertMetaStairSouth(int md)
-	{
-		switch(md)
-		{
-			case 0:	//Originally East
-				md = 3;
-				break;
-			case 1:	//Originally West
-				md = 2;
-				break;
-			case 2:	//Originally South
-				md = 0;
-				break;
-			case 3:	//Originally North
-				md = 1;
-				break;
-			case 4:	//Originally East
-				md = 7;
-				break;
-			case 5:	//Originally West
-				md = 6;
-				break;
-			case 6:	//Originally South
-				md = 4;
-				break;
-			case 7:	//Originally North
-				md = 5;
-				break;
-		}
-		return md;
-	}
-	
-	/*
-	 * Converts passed metadata from East facing BP to value for West facing spawns
-	 */
-	private int convertMetaFenceGateWest(int md)
-	{
-		md += 2;
-		while(md >= 4)
-			md -= 4;
-		return md;
-	}
-	
-	/*
-	 * Converts passed metadata from East facing BP to value for North facing spawns
-	 */
-	private int convertMetaFenceGateNorth(int md)
-	{
-		md += 1;
-		while(md >= 4)
-			md -= 4;
-		return md;
-	}
-	
-	/*
-	 * Converts passed metadata from East facing BP to value for South facing spawns
-	 */
-	private int convertMetaFenceGateSouth(int md)
-	{
-		md += 3;
-		while(md >= 4)
-			md -= 4;
-		return md;
+		
+		EnumAxis axis = EnumAxis.valueOf(facing);//EnumAxis.Y;
+		if(axis == EnumAxis.Y)
+			return axis;
+		
+		if(orientation == 2 || orientation == 3)
+			return (facing == "X") ? EnumAxis.Z : EnumAxis.X;
+		
+		return axis;
 	}
 	
 	/*
@@ -518,18 +414,8 @@ public class ShipwreckGen implements IWorldGenerator{
 	/*
 	 * Loops through an array of coordinates and adds blocks of type block with the correct orientation
 	 */
-	private void addBlocksFromArray(World world, BlockPos pos, JsonArray coords, Block block, int subtype, int orientation)
-	{
-		Boolean isStair = false;
-		Boolean isFenceGate = false;
-		
-		if(block.getUnlocalizedName().indexOf("stair") != -1)
-			isStair = true;
-		else if(block.getUnlocalizedName().indexOf("fenceGate") != -1)
-			isFenceGate = true;
-		
-		
-		
+	private void addBlocksFromArray(World world, BlockPos pos, JsonArray coords, IBlockState blkState, String variant, int orientation, String facing)
+	{	
 		for(int i = 0; i < coords.size(); ++i)
 		{
 			JsonArray posArray = coords.get(i).getAsJsonArray(); //get first set of coords
@@ -565,61 +451,11 @@ public class ShipwreckGen implements IWorldGenerator{
 						break;
 				}
 				
-				if(posArray.size() == 4) //add blocks with metadata
-				{
-					int md = posArray.get(index).getAsInt();
-					
-					if(block == Blocks.LOG)
-					{
-						//logs have annoying metadata. 4 = east/west, 8 = North/South, so if wreck is facing N/S (instead of default East), swap metadata
-						if(orientation == 2 || orientation == 3)
-							md = (md == 4) ? 8 : 4;
-					}
-					else
-					{
-						//convert metadata to face correct direction
-						switch(orientation)
-						{
-							case 1: //West
-								if(isStair)
-									md = convertMetaStairWest(md);
-								else if(isFenceGate)
-									md = convertMetaFenceGateWest(md);
-								else
-									md = convertMetaWest(md);
-								break;
-							case 2: //North
-								if(isStair)
-									md = convertMetaStairNorth(md);
-								else if(isFenceGate)
-									md = convertMetaFenceGateNorth(md);
-								else
-									md = convertMetaNorth(md);
-								break;
-							case 3: //South
-								if(isStair)
-									md = convertMetaStairSouth(md);
-								else if(isFenceGate)
-									md = convertMetaFenceGateSouth(md);
-								else
-									md = convertMetaSouth(md);
-								break;
-						}
-					}
-					
-					//metadata controls position, subtype controls material variation. Need to be added to get correct block.
-					if(subtype != -1)
-						md += subtype;
-					
-					addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block, md);
-				}
-				else if(subtype != -1)
-					addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block, subtype);
-				else//add blocks without metadata
-					addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block);
+				world.setBlockState(pos.add(x, y, z), blkState);
 			}
 		}
 	}
+	
 	
 	/*
 	 * Add a block without metadata
@@ -635,7 +471,20 @@ public class ShipwreckGen implements IWorldGenerator{
 	@SuppressWarnings("deprecation") //suppressed as getStateFromMeta is not actually deprecated by Mojang
 	private void addBlock(World world, int x, int y, int z, Block block, int metadata)
 	{
-		world.setBlockState(new BlockPos(x, y, z), block.getStateFromMeta(metadata)); //getStateFromMeta not actually deprecated
+		world.setBlockState(new BlockPos(x, y, z), block.getStateFromMeta(metadata));
+	}	
+	
+	@SuppressWarnings("deprecation")
+	private void addBlock(World world, int x, int y, int z, Block block, int metadata, EnumFacing facing)
+	{
+		PropertyDirection FACING = PropertyDirection.create("facing", EnumFacing.Plane.HORIZONTAL);
+		world.setBlockState(new BlockPos(x, y, z), block.getStateFromMeta(metadata).withProperty(FACING, facing));
+	}
+	
+	private void addBlock(World world, int x, int y, int z, Block block, EnumFacing facing)
+	{
+		PropertyDirection FACING = PropertyDirection.create("facing", EnumFacing.Plane.HORIZONTAL);
+		world.setBlockState(new BlockPos(x, y, z), block.getDefaultState().withProperty(FACING, facing));
 	}
 	
 	/*
