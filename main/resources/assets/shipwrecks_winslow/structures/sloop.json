@@ -507,7 +507,7 @@
 		{
 			"block": "minecraft:log",
 			"variant": "JUNGLE",
-			"facing": "X",
+			"axis": "X",
 			"coords": [
 				[0, 7, 0],
 				[-1, 7, 0],
@@ -624,7 +624,7 @@
 		},
 		{
 			"block": "minecraft:anvil",
-			"facing": "WEST",
+			"facing": "NORTH",
 			"coords": [
 				[5, 1, 1]
 			]
@@ -789,7 +789,7 @@
 					{
 						"block": "minecraft:log",
 						"variant": "JUNGLE",
-						"facing": "Y",
+						"axis": "Y",
 						"coords": [
 							[1, 0, 0],
 							[1, 1, 0],
@@ -812,7 +812,7 @@
 					{
 						"block": "minecraft:log",
 						"variant": "JUNGLE",
-						"facing": "Y",
+						"axis": "Y",
 						"coords": [
 							[1, 0, 0],
 							[1, 1, 0],
@@ -867,7 +867,7 @@
 					{
 						"block": "minecraft:log",
 						"variant": "JUNGLE",
-						"facing": "Y",
+						"axis": "Y",
 						"coords": [
 							[1, 0, 0],
 							[1, 1, 0],

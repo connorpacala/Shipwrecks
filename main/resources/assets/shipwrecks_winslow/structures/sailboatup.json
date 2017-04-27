@@ -86,7 +86,7 @@
 		{
 			"block": "minecraft:log",
 			"variant": "JUNGLE",
-			"facing": "Y",
+			"axis": "Y",
 			"coords": [
 				[0, 1, 0],
 				[0, 2, 0],

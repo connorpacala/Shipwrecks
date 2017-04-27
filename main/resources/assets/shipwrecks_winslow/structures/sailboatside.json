@@ -77,7 +77,7 @@
 		{
 			"block": "minecraft:log",
 			"variant": "JUNGLE",
-            "facing": "Z",
+            "axis": "Z",
 			"coords": [
 				[0, 1, 0],
 				[0, 1, 1],
@@ -99,7 +99,7 @@
 			"range": [6, 20],
 			"block": "minecraft:log",
 			"variant": "JUNGLE",
-            "facing": "X",
+            "axis": "X",
 			"coords": [
 					[0, 0, 0, 4],
 					[1, 0, 0, 4],
