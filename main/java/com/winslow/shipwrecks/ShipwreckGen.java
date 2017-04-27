@@ -4,6 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Random;
 
 import com.google.common.base.Charsets;
@@ -17,6 +18,7 @@ import com.google.gson.JsonSyntaxException;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockBed;
 import net.minecraft.block.BlockBed.EnumPartType;
+import net.minecraft.block.BlockDirectional;
 import net.minecraft.block.BlockLog.EnumAxis;
 import net.minecraft.block.BlockOldLog;
 import net.minecraft.block.BlockPlanks;
@@ -236,6 +238,10 @@ public class ShipwreckGen implements IWorldGenerator{
 		if(jsonObj.has("facing"))
 			facing = jsonObj.get("facing").getAsString();
 		
+		String axis = "";
+		if(jsonObj.has("axis"))
+			axis = jsonObj.get("axis").getAsString();
+		
 		String half = ""; //value to specify variation on objects like wood slabs (e.g. top/bottom)
 		if(jsonObj.has("half"))
 			half = jsonObj.get("half").getAsString();
@@ -246,55 +252,25 @@ public class ShipwreckGen implements IWorldGenerator{
 		
 		IBlockState blkState = block.getDefaultState();
 		
-		Collection<IProperty<?>> properties = block.getDefaultState().getPropertyKeys();
-		PropertyDirection FACING = PropertyDirection.create("facing", EnumFacing.Plane.HORIZONTAL);
-		PropertyEnum<EnumAxis> AXIS = PropertyEnum.create("axis", EnumAxis.class);
+		Collection<IProperty<?>> propertyKeys = block.getDefaultState().getPropertyKeys();
 		
-		System.out.println(block.getUnlocalizedName());
+		//System.out.println(block.getDefaultState().getPropertyKeys().toString());
 		
-		//if(!facing.isEmpty())
-		//{
-		//	if(block == Blocks.DISPENSER)
-		//		System.out.println(properties.toString());
-			//Blocks can either have the facing property or the axis property but not both...at least it wouldn't make sense to have both
-		if(properties.contains(FACING))
+		//iterate over the block's properties and add any values that appear in the 
+		Iterator<IProperty<?>> itr = propertyKeys.iterator();
+		while(itr.hasNext())
 		{
-			blkState = blkState.withProperty(FACING, getFacing(orientation, facing));
-		}
-		else if(properties.contains(AXIS))
-		{
-			blkState = blkState.withProperty(AXIS, getAxis(orientation, facing));
-		}
-		//}
-		
-		if(!variant.isEmpty())
-		{
-			PropertyEnum<EnumType> VARIANT;
-			if(block.getUnlocalizedName().indexOf("log") != -1)
-				VARIANT = BlockOldLog.VARIANT;
-			else //if(block.getUnlocalizedName().indexOf("plank") != -1)
-				VARIANT = BlockPlanks.VARIANT;
-			blkState = blkState.withProperty(VARIANT, EnumType.valueOf(variant));
-		}
-		
-		if(!half.isEmpty())
-		{
-			if(block.getUnlocalizedName().indexOf("stair") != -1)
-			{
-				PropertyEnum<EnumHalf> HALF = BlockStairs.HALF;
-				blkState = blkState.withProperty(HALF, EnumHalf.valueOf(half));
-			}
-			else
-			{
-				PropertyEnum<EnumBlockHalf> HALF = BlockSlab.HALF;
-				blkState = blkState.withProperty(HALF, EnumBlockHalf.valueOf(half));
-			}
-		}
-		
-		if(!part.isEmpty())
-		{
-			PropertyEnum<EnumPartType> PART = BlockBed.PART;
-			blkState = blkState.withProperty(PART, EnumPartType.valueOf(part));
+			IProperty<?> property = itr.next();
+			if(property.getName() == "facing" && !facing.isEmpty())
+				blkState = blkState.withProperty((PropertyDirection) property, getFacing(orientation, facing));
+			else if(property.getName() == "axis" && !axis.isEmpty())
+				blkState = blkState.withProperty((PropertyEnum) property, getAxis(orientation, axis));
+			else if(property.getName() == "variant" && !variant.isEmpty())
+				blkState = blkState.withProperty((PropertyEnum) property, EnumType.valueOf(variant));
+			else if(property.getName() == "half" && !half.isEmpty())
+				blkState = blkState.withProperty((PropertyEnum) property, EnumBlockHalf.valueOf(half));
+			else if(property.getName() == "part" && !part.isEmpty())
+				blkState = blkState.withProperty((PropertyEnum) property, EnumPartType.valueOf(part));
 		}
 		
 		
