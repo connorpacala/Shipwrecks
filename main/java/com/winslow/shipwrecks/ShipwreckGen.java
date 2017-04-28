@@ -16,17 +16,10 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
 import net.minecraft.block.Block;
-import net.minecraft.block.BlockBed;
 import net.minecraft.block.BlockBed.EnumPartType;
-import net.minecraft.block.BlockDirectional;
 import net.minecraft.block.BlockLog.EnumAxis;
-import net.minecraft.block.BlockOldLog;
-import net.minecraft.block.BlockPlanks;
 import net.minecraft.block.BlockPlanks.EnumType;
-import net.minecraft.block.BlockSlab;
 import net.minecraft.block.BlockSlab.EnumBlockHalf;
-import net.minecraft.block.BlockStairs;
-import net.minecraft.block.BlockStairs.EnumHalf;
 import net.minecraft.block.properties.IProperty;
 import net.minecraft.block.properties.PropertyDirection;
 import net.minecraft.block.properties.PropertyEnum;
@@ -230,85 +223,55 @@ public class ShipwreckGen implements IWorldGenerator{
 		if(block == null) //blockType incorrect, unknown block to add.
 			return;
 		
-		String variant = ""; //value to specify variation on objects like wood planks (e.g. oak, spruce, etc)
-		if(jsonObj.has("variant")) //get block variation (e.g. oak or spruce for wood planks)
-			variant = jsonObj.get("variant").getAsString();
-		
-		String facing = "";
-		if(jsonObj.has("facing"))
-			facing = jsonObj.get("facing").getAsString();
-		
-		String axis = "";
-		if(jsonObj.has("axis"))
-			axis = jsonObj.get("axis").getAsString();
-		
-		String half = ""; //value to specify variation on objects like wood slabs (e.g. top/bottom)
-		if(jsonObj.has("half"))
-			half = jsonObj.get("half").getAsString();
-		
-		String part = ""; //value to specify variation on objects like beds (e.g. head/foot)
-		if(jsonObj.has("part"))
-			part = jsonObj.get("part").getAsString();
-		
 		IBlockState blkState = block.getDefaultState();
-		
 		Collection<IProperty<?>> propertyKeys = block.getDefaultState().getPropertyKeys();
+		String value = "";
 		
-		//System.out.println(block.getDefaultState().getPropertyKeys().toString());
-		
-		//iterate over the block's properties and add any values that appear in the 
+		//iterate over the block's properties and add any values that appear in the json.
 		Iterator<IProperty<?>> itr = propertyKeys.iterator();
 		while(itr.hasNext())
 		{
 			IProperty<?> property = itr.next();
-			if(property.getName() == "facing" && !facing.isEmpty())
-				blkState = blkState.withProperty((PropertyDirection) property, getFacing(orientation, facing));
-			else if(property.getName() == "axis" && !axis.isEmpty())
-				blkState = blkState.withProperty((PropertyEnum) property, getAxis(orientation, axis));
-			else if(property.getName() == "variant" && !variant.isEmpty())
-				blkState = blkState.withProperty((PropertyEnum) property, EnumType.valueOf(variant));
-			else if(property.getName() == "half" && !half.isEmpty())
-				blkState = blkState.withProperty((PropertyEnum) property, EnumBlockHalf.valueOf(half));
-			else if(property.getName() == "part" && !part.isEmpty())
-				blkState = blkState.withProperty((PropertyEnum) property, EnumPartType.valueOf(part));
+			if(property.getName() == "facing" && jsonObj.has("facing"))
+			{
+				value = jsonObj.get("facing").getAsString();
+				blkState = blkState.withProperty((PropertyDirection) property, getFacing(orientation, value));
+			}
+			else if(property.getName() == "axis" && jsonObj.has("axis"))
+			{
+				value = jsonObj.get("axis").getAsString();
+				blkState = blkState.withProperty((PropertyEnum) property, getAxis(orientation, value));
+			}
+			else if(property.getName() == "variant" && jsonObj.has("variant"))
+			{
+				value = jsonObj.get("variant").getAsString();
+				blkState = blkState.withProperty((PropertyEnum) property, EnumType.valueOf(value));
+			}
+			else if(property.getName() == "half" && jsonObj.has("half"))
+			{
+				value = jsonObj.get("half").getAsString();
+				blkState = blkState.withProperty((PropertyEnum) property, EnumBlockHalf.valueOf(value));
+			}
+			else if(property.getName() == "part" && jsonObj.has("part"))
+			{
+				value = jsonObj.get("part").getAsString();
+				blkState = blkState.withProperty((PropertyEnum) property, EnumPartType.valueOf(value));
+			}
 		}
 		
+		JsonArray coords = jsonObj.getAsJsonArray("coords"); //array of block positions. "coords" existence checked at beginning of function
 		
-		if(jsonObj.has("loot")) //process blocks with inventory differently (e.g. chests have loot tiers)
+		for(int i = 0; i < coords.size(); ++i)
 		{
-			addChestsJson(world, jsonObj, pos, block, orientation);
-		}
-		else //regular blocks, no loot added to them
-		{
-			JsonArray coords = jsonObj.getAsJsonArray("coords"); //array of block positions. "coords" existence checked at beginning of function
-			addBlocksFromArray(world, pos, coords, blkState, variant, orientation, facing);
-		}
-	}
-	
-	/*
-	 * Attempts to add chests from the passed json file to the world
-	 */
-	private void addChestsJson(World world, JsonObject jsonObj, BlockPos pos, Block block, int orientation) //add ship mast to the world
-	{
-		JsonArray posArray = jsonObj.getAsJsonArray("coords"); //get array of chest objects
-		//add appropriate loot based on the loot pool that 
-		int lootPool = jsonObj.get("loot").getAsInt();
-		String facing = jsonObj.get("facing").getAsString();
-		int numLoops = (posArray.get(0).isJsonArray()) ? posArray.size() : 1; //1 loop if not an array (single entry). Fixes an error when reading an array of one value
-		
-		for(int i = 0; i < numLoops; ++i)
-		{
-			JsonArray coords = (posArray.get(0).isJsonArray()) ? posArray.get(i).getAsJsonArray() : posArray;
+			JsonArray posArray = coords.get(i).getAsJsonArray(); //get first set of coords
 			
 			int index = 0;
-			int x = coords.get(index).getAsInt();
+			int x = posArray.get(index).getAsInt();
 			++index;
-			int y = coords.get(index).getAsInt() - 1;
+			int y = posArray.get(index).getAsInt() - 1;
 			++index;
-			int z = coords.get(index).getAsInt();
+			int z = posArray.get(index).getAsInt();
 			++index;
-			//block = Block.getBlockById(posArray.get(index).getAsInt());
-			//++index;
 			
 			//convert coords to correct position based on orientation
 			switch(orientation)
@@ -328,15 +291,21 @@ public class ShipwreckGen implements IWorldGenerator{
 					z = tempS;
 					break;
 			}
-			//int md = coords.get(index).getAsInt();
 			
-			addBlock(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, block, getFacing(orientation, facing));
-			addChestLoot(world, pos.getX() + x, pos.getY() + y, pos.getZ() + z, lootPool);
+			world.setBlockState(pos.add(x, y, z), blkState);
+			
+			if(jsonObj.has("loot")) //process blocks with inventory differently (e.g. chests have loot tiers)
+			{
+				int lootPool = jsonObj.get("loot").getAsInt();
+				addChestLoot(world, pos.add(x, y, z), lootPool);
+			}
 		}
 	}
 	
-	//Get the facing direction and rotate the face of the object from the default East facing to the 
-	//correct facing for W, N, or S facing structures
+	/*
+	 * Get the facing direction and rotate the face of the object from the default East facing to the
+	 * correct facing for W, N, or S facing structures 
+	 */
 	private EnumFacing getFacing(int orientation, String facing)
 	{
 		
@@ -359,8 +328,10 @@ public class ShipwreckGen implements IWorldGenerator{
 		return dir;
 	}
 	
-	//Get the axis direction and rotate the object from the default East facing to the 
-	//correct facing for W, N, or S facing structures
+	/*
+	 * Get the axis direction and rotate the object from the default East facing to the
+	 * correct facing for W, N, or S facing structures
+	 */
 	private EnumAxis getAxis(int orientation, String facing)
 	{
 		
@@ -369,7 +340,7 @@ public class ShipwreckGen implements IWorldGenerator{
 			return axis;
 		
 		if(orientation == 2 || orientation == 3)
-			return (facing == "X") ? EnumAxis.Z : EnumAxis.X;
+			return (facing == "X") ? EnumAxis.X : EnumAxis.Z;
 		
 		return axis;
 	}
@@ -385,82 +356,6 @@ public class ShipwreckGen implements IWorldGenerator{
 			pos = pos.down();
 		
 		return pos.getY();
-	}
-	
-	/*
-	 * Loops through an array of coordinates and adds blocks of type block with the correct orientation
-	 */
-	private void addBlocksFromArray(World world, BlockPos pos, JsonArray coords, IBlockState blkState, String variant, int orientation, String facing)
-	{	
-		for(int i = 0; i < coords.size(); ++i)
-		{
-			JsonArray posArray = coords.get(i).getAsJsonArray(); //get first set of coords
-			
-			if(posArray.size() >= 3) //json array has at least 3 values (x, y, z)
-			{
-				int index = 0;
-				int x = posArray.get(index).getAsInt();
-				++index;
-				int y = posArray.get(index).getAsInt() - 1;
-				++index;
-				int z = posArray.get(index).getAsInt();
-				++index;
-				
-				//int blockID = posArray.get(3).getAsInt();
-				
-				//convert coords to correct position based on orientation
-				switch(orientation)
-				{
-					case 1: //West
-						x = -x;
-						z = -z;
-						break;
-					case 2: //North
-						int tempN = x;
-						x = -z;
-						z = tempN;
-						break;
-					case 3: //South
-						int tempS = -x;
-						x = z;
-						z = tempS;
-						break;
-				}
-				
-				world.setBlockState(pos.add(x, y, z), blkState);
-			}
-		}
-	}
-	
-	
-	/*
-	 * Add a block without metadata
-	 */
-	private void addBlock(World world, int x, int y, int z, Block block)
-	{
-		world.setBlockState(new BlockPos(x, y, z), block.getDefaultState());
-	}
-	
-	/*
-	 * Add a block with metadata
-	 */
-	@SuppressWarnings("deprecation") //suppressed as getStateFromMeta is not actually deprecated by Mojang
-	private void addBlock(World world, int x, int y, int z, Block block, int metadata)
-	{
-		world.setBlockState(new BlockPos(x, y, z), block.getStateFromMeta(metadata));
-	}	
-	
-	@SuppressWarnings("deprecation")
-	private void addBlock(World world, int x, int y, int z, Block block, int metadata, EnumFacing facing)
-	{
-		PropertyDirection FACING = PropertyDirection.create("facing", EnumFacing.Plane.HORIZONTAL);
-		world.setBlockState(new BlockPos(x, y, z), block.getStateFromMeta(metadata).withProperty(FACING, facing));
-	}
-	
-	private void addBlock(World world, int x, int y, int z, Block block, EnumFacing facing)
-	{
-		PropertyDirection FACING = PropertyDirection.create("facing", EnumFacing.Plane.HORIZONTAL);
-		world.setBlockState(new BlockPos(x, y, z), block.getDefaultState().withProperty(FACING, facing));
 	}
 	
 	/*
@@ -501,10 +396,9 @@ public class ShipwreckGen implements IWorldGenerator{
 	/*
 	 * add chest loot based on lootPool value
 	 */
-	private void addChestLoot(World world, int x, int y, int z, int lootPool)
+	private void addChestLoot(World world, BlockPos chestPos, int lootPool)
 	{
 		Random random = new Random();
-		BlockPos chestPos = new BlockPos(x, y, z);
 		
 		ItemStack stack = new ItemStack(Items.GOLD_INGOT);
 		
