@@ -17,6 +17,7 @@ import com.google.gson.JsonSyntaxException;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockBed.EnumPartType;
+import net.minecraft.block.BlockDoor;
 import net.minecraft.block.BlockLog.EnumAxis;
 import net.minecraft.block.BlockPlanks.EnumType;
 import net.minecraft.block.BlockSlab.EnumBlockHalf;
@@ -250,7 +251,10 @@ public class ShipwreckGen implements IWorldGenerator{
 			else if(property.getName() == "half" && jsonObj.has("half"))
 			{
 				value = jsonObj.get("half").getAsString();
-				blkState = blkState.withProperty((PropertyEnum) property, EnumBlockHalf.valueOf(value));
+				if(block.getUnlocalizedName().contains("door"))
+					blkState = blkState.withProperty((PropertyEnum) property, BlockDoor.EnumDoorHalf.valueOf(value));
+				else
+					blkState = blkState.withProperty((PropertyEnum) property, EnumBlockHalf.valueOf(value));
 			}
 			else if(property.getName() == "part" && jsonObj.has("part"))
 			{
@@ -334,13 +338,15 @@ public class ShipwreckGen implements IWorldGenerator{
 	 */
 	private EnumAxis getAxis(int orientation, String facing)
 	{
-		
 		EnumAxis axis = EnumAxis.valueOf(facing);//EnumAxis.Y;
 		if(axis == EnumAxis.Y)
 			return axis;
 		
+		if(axis == EnumAxis.NONE)
+			return axis;
+		
 		if(orientation == 2 || orientation == 3)
-			return (facing == "X") ? EnumAxis.X : EnumAxis.Z;
+			return (axis == EnumAxis.X) ? EnumAxis.Z : EnumAxis.X;
 		
 		return axis;
 	}
