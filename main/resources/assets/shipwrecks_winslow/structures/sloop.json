@@ -688,6 +688,22 @@
 			"coords": [
 				[-8, 4, 0, 1]
 			]
+		},
+		{
+			"block": "minecraft:wooden_door",
+			"half": "LOWER",
+            "facing": "EAST",
+			"coords": [
+				[-6, 1, 0]
+			]
+		},
+		{
+			"block": "minecraft:wooden_door",
+			"half": "UPPER",
+            "facing": "EAST",
+			"coords": [
+				[-6, 2, 0]
+			]
 		}
 	],
 	"chance_sections": [
