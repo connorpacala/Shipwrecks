@@ -21,6 +21,7 @@ import net.minecraft.block.BlockDoor;
 import net.minecraft.block.BlockLog.EnumAxis;
 import net.minecraft.block.BlockPlanks.EnumType;
 import net.minecraft.block.BlockSlab.EnumBlockHalf;
+import net.minecraft.block.BlockStairs;
 import net.minecraft.block.properties.IProperty;
 import net.minecraft.block.properties.PropertyDirection;
 import net.minecraft.block.properties.PropertyEnum;
@@ -184,6 +185,67 @@ public class ShipwreckGen implements IWorldGenerator{
 					}
 				}
 			}
+			if(jsonObj.has("damage_sections")) //create damage on ship. Replace removed blocks with block type 1 away from center and 1 Y coord up
+			{
+				JsonArray damageSections = jsonObj.getAsJsonArray("damage_sections");
+				
+				for(int i = 0; i < damageSections.size(); ++i)
+				{
+					JsonObject piece = damageSections.get(i).getAsJsonObject();
+					if(!piece.has("chance")) //these sections require a weight field
+						return;
+					JsonArray chance = piece.getAsJsonArray("chance");
+					JsonArray sections = piece.getAsJsonArray("chance_blocks");
+					
+					for(int j = 0; j < chance.size() && j < sections.size(); ++j)
+					{
+						if(random.nextInt(chance.get(j).getAsInt()) == 0)
+						{
+							JsonObject data = sections.get(j).getAsJsonObject(); //get block coordinates
+							JsonArray coordArray = data.getAsJsonArray("coords");
+							
+							for(int k = 0; k < coordArray.size(); ++k)
+							{
+								JsonArray coords = coordArray.get(k).getAsJsonArray();
+								int index = 0;
+								int x = coords.get(index).getAsInt();
+								++index;
+								int y = coords.get(index).getAsInt() - 1;
+								++index;
+								int z = coords.get(index).getAsInt();
+								++index;
+								
+								//convert coords to correct position based on orientation
+								switch(orientation)
+								{
+									case 1: //West
+										x = -x;
+										z = -z;
+										break;
+									case 2: //North
+										int tempN = x;
+										x = -z;
+										z = tempN;
+										break;
+									case 3: //South
+										int tempS = -x;
+										x = z;
+										z = tempS;
+										break;
+								}
+								
+								//facing determines which side of the block to get the replacement block from
+								BlockPos blkSource = pos.add(x, y, z);
+								EnumFacing dir = getFacing(orientation, piece.get("facing").getAsString());
+								blkSource = blkSource.offset(dir);
+								blkSource = blkSource.up();
+								
+								world.setBlockState(pos.add(x, y, z), world.getBlockState(blkSource));
+							}
+						}
+					}
+				}
+			}
 		} catch (JsonIOException e) {
 			e.printStackTrace();
 		} catch (JsonSyntaxException e) {
@@ -251,8 +313,10 @@ public class ShipwreckGen implements IWorldGenerator{
 			else if(property.getName() == "half" && jsonObj.has("half"))
 			{
 				value = jsonObj.get("half").getAsString();
-				if(block.getUnlocalizedName().contains("door"))
+				if(block.getUnlocalizedName().indexOf("door") != -1)
 					blkState = blkState.withProperty((PropertyEnum) property, BlockDoor.EnumDoorHalf.valueOf(value));
+				else if(block.getUnlocalizedName().indexOf("stair") != -1)
+					blkState = blkState.withProperty((PropertyEnum) property, BlockStairs.EnumHalf.valueOf(value));
 				else
 					blkState = blkState.withProperty((PropertyEnum) property, EnumBlockHalf.valueOf(value));
 			}
