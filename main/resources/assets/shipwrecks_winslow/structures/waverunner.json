@@ -1,5 +1,5 @@
 {
-    "canfloat": true,
+    "can_float": true,
     "sections": [
         {
             "block": "minecraft:air",

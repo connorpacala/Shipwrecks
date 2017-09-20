@@ -1,5 +1,5 @@
 {
-	"canfloat": false,
+	"can_float": false,
 	"sections": [
 		{
 			"block": "minecraft:planks",
