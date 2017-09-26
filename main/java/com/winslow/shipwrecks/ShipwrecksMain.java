@@ -8,8 +8,8 @@ import net.minecraftforge.fml.common.registry.GameRegistry;
 
 @Mod(modid = ShipwrecksMain.MODID, version = ShipwrecksMain.VERSION)
 public class ShipwrecksMain {
-    public static final String MODID = "shipwrecks_winslow";
-    public static final String VERSION = "2.0.0";
+    static final String MODID = "shipwrecks_winslow";
+    static final String VERSION = "2.0.0";
 
     //@SidedProxy(clientSide = "com.winslow.shipwrecks.ClientProxy",
     //		serverSide = "com.winslow.shipwrecks.ServerProxy")

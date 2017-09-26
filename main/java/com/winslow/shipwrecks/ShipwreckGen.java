@@ -65,10 +65,8 @@ public class ShipwreckGen implements IWorldGenerator {
             int newX = (int) ((random.nextDouble() * maxOffset - 2 * random.nextDouble() * maxOffset) * 16);
             int newZ = (int) ((random.nextDouble() * maxOffset - 2 * random.nextDouble() * maxOffset) * 16);
             pos = pos.add(newX, world.getSeaLevel(), newZ);
-            System.out.println(findSeafloor(world, pos));
-            pos = pos.add(0, findSeafloor(world, pos) - pos.getY(), 0);
 
-            System.out.println(pos);
+            pos = pos.add(0, findSeafloor(world, pos) - pos.getY(), 0);
 
             if (biomeName.contains("ocean")) //check to generate ship in ocean
                 generateStructures(world, getStructureName(true, random), pos);
@@ -261,14 +259,14 @@ public class ShipwreckGen implements IWorldGenerator {
 
         //iterate over the block's properties and add any values that appear in the json.
         Iterator<IProperty<?>> itr = propertyKeys.iterator();
-        while (itr.hasNext()) {
-            IProperty<?> property = itr.next();
+        //while (itr.hasNext()) {
+        for (IProperty<?> property : propertyKeys) {
             if (property.getName().equals("facing") && jsonObj.has("facing")) {
                 value = jsonObj.get("facing").getAsString();
                 blkState = blkState.withProperty((PropertyDirection) property, getFacing(orientation, value));
             } else if (property.getName().equals("axis") && jsonObj.has("axis")) {
                 value = jsonObj.get("axis").getAsString();
-                blkState = blkState.withProperty((PropertyEnum) property, getAxis(orientation, value));
+                blkState = blkState.withProperty((PropertyEnum<EnumAxis>) property, getAxis(orientation, value));
             } else if (property.getName().equals("variant") && jsonObj.has("variant")) {
                 value = jsonObj.get("variant").getAsString();
                 blkState = blkState.withProperty((PropertyEnum) property, EnumType.valueOf(value));
@@ -335,27 +333,20 @@ public class ShipwreckGen implements IWorldGenerator {
 
         EnumFacing dir = EnumFacing.byName(facing);//EnumFacing.EAST;
 
-        switch (orientation) {
-            case 1:    //West
-                try {
+        if (dir != null) {
+            switch (orientation) {
+                case 1:    //West
                     dir = dir.rotateY();
                     dir = dir.rotateY();
-                } catch (IllegalStateException e) {
-                    System.out.print(e.getMessage());
-                }
-                break;
-            case 2:    //North
-                try {
+                    break;
+                case 2:    //North
                     dir = dir.rotateY();
-                } catch (IllegalStateException e) {
-                    System.out.println(e.getMessage());
-                }
-                break;
-            case 3:    //South
-                dir = dir.rotateYCCW();
-                break;
+                    break;
+                case 3:    //South
+                    dir = dir.rotateYCCW();
+                    break;
+            }
         }
-
         return dir;
     }
 
@@ -431,12 +422,9 @@ public class ShipwreckGen implements IWorldGenerator {
 
         switch (lootPool) {
             case 1:
-                try {
-                    TileEntityChest tileentitychest = (TileEntityChest) world.getTileEntity(chestPos);
+                TileEntityChest tileentitychest = (TileEntityChest) world.getTileEntity(chestPos);
+                if (tileentitychest != null)
                     tileentitychest.setInventorySlotContents(random.nextInt(tileentitychest.getSizeInventory()), stack);
-                } catch (NullPointerException e) {
-                    System.out.println(e.getMessage());
-                }
                 break;
         }
     }

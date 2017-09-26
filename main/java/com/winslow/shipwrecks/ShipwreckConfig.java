@@ -3,7 +3,7 @@ package com.winslow.shipwrecks;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 
-public class ShipwreckConfig {
+class ShipwreckConfig {
     private static String[] names;
     private static int[] oceanWeights;
     private static int[] beachWeights;
@@ -13,7 +13,7 @@ public class ShipwreckConfig {
     /*
      * load the configuration and initialize values
      */
-    public static void initConfiguration(FMLPreInitializationEvent event) {
+    static void initConfiguration(FMLPreInitializationEvent event) {
         Configuration config = new Configuration(event.getSuggestedConfigurationFile());
         config.load();
 
@@ -36,64 +36,64 @@ public class ShipwreckConfig {
     /*
      * Getter for names, an array of structure names
      */
-    public static String[] getNames() {
+    static String[] getNames() {
         return names;
     }
 
     /*
      * Setter for names, an array of structure names
      */
-    public static void setNames(String[] names) {
+    private static void setNames(String[] names) {
         ShipwreckConfig.names = names;
     }
 
     /*
      * Getter for ocean weights, an int array of weights for spawning structures in ocean biomes
      */
-    public static int[] getOceanWeights() {
+    static int[] getOceanWeights() {
         return oceanWeights;
     }
 
     /*
      * Setter for ocean weights, an int array of weights for spawning structures in ocean biomes
      */
-    public static void setOceanWeights(int[] weights) {
+    private static void setOceanWeights(int[] weights) {
         ShipwreckConfig.oceanWeights = weights;
     }
 
     /*
      * Getter for beach weights, an int array of weights for spawning structures in beach biomes
      */
-    public static int[] getBeachWeights() {
+    static int[] getBeachWeights() {
         return beachWeights;
     }
 
     /*
      * Setter for ocean weights, an int array of weights for spawning structures in ocean biomes
      */
-    public static void setBeachWeights(int[] weights) {
+    private static void setBeachWeights(int[] weights) {
         ShipwreckConfig.beachWeights = weights;
     }
 
-    public static int getMinDist() {
+    static int getMinDist() {
         return minDist;
     }
 
     /*
      * Setter for ocean weights, an int array of weights for spawning structures in ocean biomes
      */
-    public static void setMinDist(int minDist) {
+    private static void setMinDist(int minDist) {
         ShipwreckConfig.minDist = minDist;
     }
 
-    public static int getMaxDist() {
+    static int getMaxDist() {
         return maxDist;
     }
 
     /*
      * Setter for max dist, the maximum distance between shipwrecks
      */
-    public static void setMaxDist(int maxDist) {
+    private static void setMaxDist(int maxDist) {
         ShipwreckConfig.maxDist = maxDist;
     }
 }
