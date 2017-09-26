@@ -29,7 +29,6 @@ import net.minecraftforge.fml.common.IWorldGenerator;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Random;
 
 public class ShipwreckGen implements IWorldGenerator {
@@ -242,6 +241,7 @@ public class ShipwreckGen implements IWorldGenerator {
     /*
      * adds blocks to the world with positions read from passed JsonObject
      */
+    @SuppressWarnings("unchecked") //suppressed as cast exceptions will be caught and I haven't found a better solution for casting properties
     private void addBlocksJson(World world, JsonObject jsonObj, BlockPos pos, int orientation) {
         if (!jsonObj.has("block") || !jsonObj.has("coords")) //missing required field, don't know what block to add/where to put them
             return;
@@ -255,33 +255,36 @@ public class ShipwreckGen implements IWorldGenerator {
 
         IBlockState blkState = block.getDefaultState();
         Collection<IProperty<?>> propertyKeys = block.getDefaultState().getPropertyKeys();
-        String value = "";
+        String value;
 
         //iterate over the block's properties and add any values that appear in the json.
-        Iterator<IProperty<?>> itr = propertyKeys.iterator();
-        //while (itr.hasNext()) {
-        for (IProperty<?> property : propertyKeys) {
-            if (property.getName().equals("facing") && jsonObj.has("facing")) {
-                value = jsonObj.get("facing").getAsString();
-                blkState = blkState.withProperty((PropertyDirection) property, getFacing(orientation, value));
-            } else if (property.getName().equals("axis") && jsonObj.has("axis")) {
-                value = jsonObj.get("axis").getAsString();
-                blkState = blkState.withProperty((PropertyEnum<EnumAxis>) property, getAxis(orientation, value));
-            } else if (property.getName().equals("variant") && jsonObj.has("variant")) {
-                value = jsonObj.get("variant").getAsString();
-                blkState = blkState.withProperty((PropertyEnum) property, EnumType.valueOf(value));
-            } else if (property.getName().equals("half") && jsonObj.has("half")) {
-                value = jsonObj.get("half").getAsString();
-                if (block.getUnlocalizedName().contains("door"))
-                    blkState = blkState.withProperty((PropertyEnum) property, BlockDoor.EnumDoorHalf.valueOf(value));
-                else if (block.getUnlocalizedName().contains("stair"))
-                    blkState = blkState.withProperty((PropertyEnum) property, BlockStairs.EnumHalf.valueOf(value));
-                else
-                    blkState = blkState.withProperty((PropertyEnum) property, EnumBlockHalf.valueOf(value));
-            } else if (property.getName().equals("part") && jsonObj.has("part")) {
-                value = jsonObj.get("part").getAsString();
-                blkState = blkState.withProperty((PropertyEnum) property, EnumPartType.valueOf(value));
+        try {
+            for (IProperty<?> property : propertyKeys) {
+                if (property.getName().equals("facing") && jsonObj.has("facing")) {
+                    value = jsonObj.get("facing").getAsString();
+                    blkState = blkState.withProperty((PropertyDirection) property, getFacing(orientation, value));
+                } else if (property.getName().equals("axis") && jsonObj.has("axis")) {
+                    value = jsonObj.get("axis").getAsString();
+                    blkState = blkState.withProperty((PropertyEnum) property, getAxis(orientation, value));
+                } else if (property.getName().equals("variant") && jsonObj.has("variant")) {
+                    value = jsonObj.get("variant").getAsString();
+                    blkState = blkState.withProperty((PropertyEnum) property, EnumType.valueOf(value));
+                } else if (property.getName().equals("half") && jsonObj.has("half")) {
+                    value = jsonObj.get("half").getAsString();
+                    if (block.getUnlocalizedName().contains("door"))
+                        blkState = blkState.withProperty((PropertyEnum) property, BlockDoor.EnumDoorHalf.valueOf(value));
+                    else if (block.getUnlocalizedName().contains("stair"))
+                        blkState = blkState.withProperty((PropertyEnum) property, BlockStairs.EnumHalf.valueOf(value));
+                    else
+                        blkState = blkState.withProperty((PropertyEnum) property, EnumBlockHalf.valueOf(value));
+                } else if (property.getName().equals("part") && jsonObj.has("part")) {
+                    value = jsonObj.get("part").getAsString();
+                    blkState = blkState.withProperty((PropertyEnum) property, EnumPartType.valueOf(value));
+                }
             }
+        }
+        catch (ClassCastException e) {
+            System.out.println(e.getMessage());
         }
 
         JsonArray coords = jsonObj.getAsJsonArray("coords"); //array of block positions. "coords" existence checked at beginning of function
