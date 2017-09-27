@@ -9,6 +9,7 @@ class ShipwreckConfig {
     private static int[] beachWeights;
     private static int minDist;
     private static int maxDist;
+    private static boolean includeDivingArmor;
 
     /*
      * load the configuration and initialize values
@@ -29,6 +30,8 @@ class ShipwreckConfig {
         setOceanWeights(config.get("Weights", "Ocean Generation Weights", defaultOceanWeights).getIntList());
         int[] defaultBeachWeights = {0, 20, 15, 15, 10, 7, 3};
         setBeachWeights(config.get("Weights", "Beach Generation Weights", defaultBeachWeights).getIntList());
+
+        setIncludeDivingArmor(config.get("Items", "Include Diving Armor", true).getBoolean(false));
 
         config.save();
     }
@@ -95,5 +98,19 @@ class ShipwreckConfig {
      */
     private static void setMaxDist(int maxDist) {
         ShipwreckConfig.maxDist = maxDist;
+    }
+
+    /*
+     * Getter for names, an array of structure names
+     */
+    static boolean getIncludeDivingArmor() {
+        return includeDivingArmor;
+    }
+
+    /*
+     * Setter for names, an array of structure names
+     */
+    private static void setIncludeDivingArmor(Boolean include) {
+        ShipwreckConfig.includeDivingArmor = include;
     }
 }

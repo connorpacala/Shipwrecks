@@ -96,14 +96,8 @@ public class ShipwreckGen implements IWorldGenerator {
             Random random = new Random();
             int orientation = random.nextInt(4); //E, W, N, S orientation
 
-            //if(jsonObj.has("canfloat"))
-            // canFloat = jsonObj.get("canfloat").getAsBoolean();
-
             if (jsonObj.getAsJsonPrimitive("can_float").getAsBoolean() && random.nextInt(4) != 0)
                 pos = pos.add(0, world.getSeaLevel() - pos.getY(), 0);
-
-            //if(!canFloat || random.nextInt(2) != 0) //chance for structures that can float to not float REPLACE THIS WITH A VARIABLE IN THE CONFIG
-            // pos = findSeafloor(world, pos);
 
             if (jsonObj.has("sections")) {
                 JsonArray sections = jsonObj.getAsJsonArray("sections"); //get sections (an array of objects containing block types and coordinates)
