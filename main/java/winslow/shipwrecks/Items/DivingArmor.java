@@ -1,6 +1,6 @@
-package com.winslow.shipwrecks.Items;
+package winslow.shipwrecks.Items;
 
-import com.winslow.shipwrecks.ShipwrecksMain;
+import winslow.shipwrecks.ShipwrecksMain;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.EntityEquipmentSlot;
@@ -13,12 +13,15 @@ import net.minecraft.world.World;
 import java.util.Random;
 
 public class DivingArmor extends ItemArmor {
+    private String name;
+
     public DivingArmor(String name, ArmorMaterial material, int renderIndex, EntityEquipmentSlot slot) {
         super(material, renderIndex, slot);
-        this.setUnlocalizedName(name);
-        this.setRegistryName(name);
-        this.setCreativeTab(CreativeTabs.COMBAT);
-        this.setMaxStackSize(1);
+        this.name = name;
+        setRegistryName(name);
+        setUnlocalizedName(getRegistryName().toString());
+        setCreativeTab(CreativeTabs.COMBAT);
+        setMaxStackSize(1);
     }
 
     @Override
@@ -37,6 +40,8 @@ public class DivingArmor extends ItemArmor {
 
         if (slowdown == 4)
             addPotionEffect(player, Potion.getPotionById(13), 10, 2);
+            if (!player.isInWater())
+                addPotionEffect(player, Potion.getPotionById(2), 10, slowdown);
         else if (slowdown > 0){
             if (!player.isInWater())
                 addPotionEffect(player, Potion.getPotionById(2), 10, slowdown);

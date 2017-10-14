@@ -1,0 +1,6 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "shipwrecks_winslow:items/diving_chest"
+  }
+}
