@@ -1,4 +1,4 @@
-package com.winslow.shipwrecks;
+package winslow.shipwrecks;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;

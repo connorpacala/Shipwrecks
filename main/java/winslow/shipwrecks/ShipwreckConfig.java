@@ -1,4 +1,4 @@
-package com.winslow.shipwrecks;
+package winslow.shipwrecks;
 
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
