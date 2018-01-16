@@ -89,7 +89,7 @@
 		{
 			"range": [6, 20],
 			"block": "minecraft:chest",
-			"loot": 1,
+			"loot": "low",
             "facing": "EAST",
 			"coords": [
 				[2, 0, 0]

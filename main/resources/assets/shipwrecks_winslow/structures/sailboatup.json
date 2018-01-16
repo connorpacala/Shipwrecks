@@ -101,7 +101,7 @@
 		},
 		{
 			"block": "minecraft:chest",
-			"loot": 1,
+			"loot": "low",
 			"facing": "WEST",
 			"coords": [
 				[2, 2, 0]

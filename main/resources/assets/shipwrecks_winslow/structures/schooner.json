@@ -1534,11 +1534,18 @@
         },
         {
             "block": "minecraft:chest",
-            "loot": 1,
+            "loot": "med",
             "facing": "EAST",
             "coords": [
-                [-12, 3, 2],
                 [-12, 0, 0]
+            ]
+        },
+        {
+            "block": "minecraft:chest",
+            "loot": "captain",
+            "facing": "EAST",
+            "coords": [
+                [-12, 3, 2]
             ]
         },
         {

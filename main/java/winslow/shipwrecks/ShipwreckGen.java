@@ -96,7 +96,8 @@ public class ShipwreckGen implements IWorldGenerator {
             Random random = new Random();
             int orientation = random.nextInt(4); //E, W, N, S orientation
 
-            if (jsonObj.getAsJsonPrimitive("can_float").getAsBoolean() && random.nextInt(4) != 0)
+            // 1 in 6 chance of ship floating
+            if (jsonObj.getAsJsonPrimitive("can_float").getAsBoolean() && random.nextInt(6) == 0)
                 pos = pos.add(0, world.getSeaLevel() - pos.getY(), 0);
 
             if (jsonObj.has("sections")) {
@@ -316,7 +317,7 @@ public class ShipwreckGen implements IWorldGenerator {
 
             if (jsonObj.has("loot")) //process blocks with inventory differently (e.g. chests have loot tiers)
             {
-                int lootPool = jsonObj.get("loot").getAsInt();
+                String lootPool = jsonObj.get("loot").getAsString();
                 addChestLoot(world, pos.add(x, y, z), lootPool);
             }
         }
@@ -412,17 +413,34 @@ public class ShipwreckGen implements IWorldGenerator {
     /*
      * add chest loot based on lootPool value
      */
-    private void addChestLoot(World world, BlockPos chestPos, int lootPool) {
+    private void addChestLoot(World world, BlockPos chestPos, String lootPool) {
         Random random = new Random();
 
-        ItemStack stack = new ItemStack(Items.GOLD_INGOT);
+        ItemStack stack;
 
-        switch (lootPool) {
-            case 1:
-                TileEntityChest tileentitychest = (TileEntityChest) world.getTileEntity(chestPos);
-                if (tileentitychest != null)
-                    tileentitychest.setInventorySlotContents(random.nextInt(tileentitychest.getSizeInventory()), stack);
-                break;
+        TileEntityChest tileentitychest = (TileEntityChest) world.getTileEntity(chestPos);
+        if (tileentitychest != null) {
+            switch (lootPool) {
+                case "cargo":
+                    stack = new ItemStack(Items.APPLE);
+                    break;
+                case "captain":
+                    stack = new ItemStack(Items.BOOK);
+                    break;
+                case "low":  // common tier loot (e.g. sailboat loot)
+                    stack = new ItemStack(Items.IRON_INGOT);
+                    break;
+                case "med":  //med tier loot (e.g. schooner)
+                    stack = new ItemStack(Items.EMERALD);
+                    break;
+                case "high":  //high tier loot (e.g. waverunner)
+                    stack = new ItemStack(Items.DIAMOND);
+                    break;
+                default:
+                    stack = new ItemStack(Items.GOLD_INGOT);
+                    break;
+            }
+            tileentitychest.setInventorySlotContents(random.nextInt(tileentitychest.getSizeInventory()), stack);
         }
     }
 }
