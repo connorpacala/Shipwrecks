@@ -1,6 +1,9 @@
 package winslow.shipwrecks.Items;
 
-import winslow.shipwrecks.ShipwrecksMain;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
+import winslow.shipwrecks.Init.InitArmor;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.EntityEquipmentSlot;
@@ -26,17 +29,17 @@ public class DivingArmor extends ItemArmor {
 
     @Override
     public void onArmorTick(World world, EntityPlayer player, ItemStack items) {
-        ItemStack helm = player.inventory.armorItemInSlot(3);
-        ItemStack chest = player.inventory.armorItemInSlot(2);
-        ItemStack legs = player.inventory.armorItemInSlot(1);
-        ItemStack feet = player.inventory.armorItemInSlot(0);
+        ItemStack helm = player.getItemStackFromSlot(EntityEquipmentSlot.HEAD);
+        ItemStack chest = player.getItemStackFromSlot(EntityEquipmentSlot.CHEST);
+        ItemStack legs = player.getItemStackFromSlot(EntityEquipmentSlot.LEGS);
+        ItemStack feet = player.getItemStackFromSlot(EntityEquipmentSlot.FEET);
 
         int slowdown = 0;
 
-        slowdown += (helm.getItem() == ShipwrecksMain.diving_helmet) ? 1 : 0;
-        slowdown += (chest.getItem() == ShipwrecksMain.diving_chest) ? 1 : 0;
-        slowdown += (legs.getItem() == ShipwrecksMain.diving_legs) ? 1 : 0;
-        slowdown += (feet.getItem() == ShipwrecksMain.diving_boots) ? 1 : 0;
+        slowdown += (helm.getItem() == InitArmor.diving_helmet) ? 1 : 0;
+        slowdown += (chest.getItem() == InitArmor.diving_chest) ? 1 : 0;
+        slowdown += (legs.getItem() == InitArmor.diving_legs) ? 1 : 0;
+        slowdown += (feet.getItem() == InitArmor.diving_boots) ? 1 : 0;
 
         if (slowdown == 4)
             addPotionEffect(player, Potion.getPotionById(13), 10, 2);
@@ -55,6 +58,6 @@ public class DivingArmor extends ItemArmor {
 
     private void addPotionEffect(EntityPlayer player, Potion potion, int duration, int level) {
         if (player.getActivePotionEffect(potion) == null || player.getActivePotionEffect(potion).getDuration() <= 1)
-                player.addPotionEffect(new PotionEffect(potion, duration, level, true, true));
+                player.addPotionEffect(new PotionEffect(potion, duration, level, true, false));
     }
 }
