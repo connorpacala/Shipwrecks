@@ -15,9 +15,6 @@ import net.minecraft.block.properties.PropertyDirection;
 import net.minecraft.block.properties.PropertyEnum;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
-import net.minecraft.init.Items;
-import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntityChest;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -32,6 +29,8 @@ import java.util.Collection;
 import java.util.Random;
 
 public class ShipwreckGen implements IWorldGenerator {
+
+    private ShipwreckLoot loot = new ShipwreckLoot();
 
     @Override
     public void generate(Random random, int chunkX, int chunkZ, World world, IChunkGenerator chunkGenerator,
@@ -318,7 +317,7 @@ public class ShipwreckGen implements IWorldGenerator {
             if (jsonObj.has("loot")) //process blocks with inventory differently (e.g. chests have loot tiers)
             {
                 String lootPool = jsonObj.get("loot").getAsString();
-                addChestLoot(world, pos.add(x, y, z), lootPool);
+                loot.addChestLoot(world, pos.add(x, y, z), lootPool);
             }
         }
     }
@@ -401,46 +400,12 @@ public class ShipwreckGen implements IWorldGenerator {
         for (int i = 0; i < weights.length; ++i) {
             totalWeight += weights[i];
             if (totalWeight >= value) {
-                if (i == 0) //the first index, weighted value for no ships to spawn so don't return a name
-                    return null;
-                else //return the name of the wreck corresponding to the weight
-                    return ShipwreckConfig.getNames()[i - 1]; //i - 1 as the weighted array has the no spawn value at index 0
+//                if (i == 0) //the first index, weighted value for no ships to spawn so don't return a name
+//                    return null;
+//                else //return the name of the wreck corresponding to the weight
+                return ShipwreckConfig.getNames()[i]; //i - 1 as the weighted array has the no spawn value at index 0
             }
         }
         return null;
-    }
-
-    /*
-     * add chest loot based on lootPool value
-     */
-    private void addChestLoot(World world, BlockPos chestPos, String lootPool) {
-        Random random = new Random();
-
-        ItemStack stack;
-
-        TileEntityChest tileentitychest = (TileEntityChest) world.getTileEntity(chestPos);
-        if (tileentitychest != null) {
-            switch (lootPool) {
-                case "cargo":
-                    stack = new ItemStack(Items.APPLE);
-                    break;
-                case "captain":
-                    stack = new ItemStack(Items.BOOK);
-                    break;
-                case "low":  // common tier loot (e.g. sailboat loot)
-                    stack = new ItemStack(Items.IRON_INGOT);
-                    break;
-                case "med":  //med tier loot (e.g. schooner)
-                    stack = new ItemStack(Items.EMERALD);
-                    break;
-                case "high":  //high tier loot (e.g. waverunner)
-                    stack = new ItemStack(Items.DIAMOND);
-                    break;
-                default:
-                    stack = new ItemStack(Items.GOLD_INGOT);
-                    break;
-            }
-            tileentitychest.setInventorySlotContents(random.nextInt(tileentitychest.getSizeInventory()), stack);
-        }
     }
 }

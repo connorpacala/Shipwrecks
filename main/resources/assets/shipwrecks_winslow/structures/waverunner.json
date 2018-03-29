@@ -4444,7 +4444,7 @@
         },
         {
             "block": "minecraft:chest",
-            "loot": 1,
+            "loot": "cargo",
             "facing": "SOUTH",
             "coords": [
                 [4, -2, -3],
@@ -4461,7 +4461,7 @@
         },
         {
             "block": "minecraft:chest",
-            "loot": 1,
+            "loot": "cargo",
             "facing": "NORTH",
             "coords": [
                 [4, -2, 3],
@@ -4478,7 +4478,7 @@
         },
         {
             "block": "minecraft:chest",
-            "loot": 1,
+            "loot": "captain",
             "facing": "EAST",
             "coords": [
                 [-33, 5, 0]
@@ -4486,7 +4486,7 @@
         },
         {
             "block": "minecraft:chest",
-            "loot": 1,
+            "loot": "epic",
             "facing": "WEST",
             "coords": [
                 [-24, -4, 0]

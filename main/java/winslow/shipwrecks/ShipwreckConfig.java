@@ -25,10 +25,10 @@ class ShipwreckConfig {
         String[] defaultStructures = {"rowboat", "sailboatup", "sailboatside", "sloop", "schooner", "waverunner"};
         config.get("Structures", "A: Instructions", "This is a list of the structures that will be used in generation. These MUST match the name of the JSON filename for the structure (without the .json extension).");
         setNames(config.get("Structures", "Names", defaultStructures).getStringList());
-        int[] defaultOceanWeights = {0, 20, 15, 10, 6, 3, 1};
-        config.get("Weights", "A: Instructions", "These values determine the chance the above structures have of spawning. The first value is the chance of NO structures spawning on that spot, the remaining values correspond to the stucture names listed above IN ORDER. So, by default, the second number in the list is the weight for the rowboat (the first name in the list). Set the value to 0 to prevent it from being counted/generating.");
+        int[] defaultOceanWeights = {30, 20, 15, 5, 3, 1};
+        config.get("Weights", "A: Instructions", "These values determine the chance the above structures have of spawning. The values correspond to the stucture names listed above IN ORDER. So, by default, the second number in the list is the weight for the rowboat (the first name in the list). Set the value to 0 to prevent it from being counted/generating.");
         setOceanWeights(config.get("Weights", "Ocean Generation Weights", defaultOceanWeights).getIntList());
-        int[] defaultBeachWeights = {0, 20, 15, 10, 6, 3, 1};
+        int[] defaultBeachWeights = {30, 20, 15, 5, 3, 1};
         setBeachWeights(config.get("Weights", "Beach Generation Weights", defaultBeachWeights).getIntList());
 
         setIncludeDivingArmor(config.get("Items", "Include Diving Armor", true).getBoolean(false));
