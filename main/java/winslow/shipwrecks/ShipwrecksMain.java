@@ -17,6 +17,8 @@ import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.registry.GameRegistry;
 import winslow.shipwrecks.Proxy.CommonProxy;
 
+import java.io.File;
+
 @Mod(modid = ShipwrecksMain.MODID, version = ShipwrecksMain.VERSION)
 public class ShipwrecksMain {
     public static final String MODID = "shipwrecks_winslow";
@@ -35,6 +37,16 @@ public class ShipwrecksMain {
     @EventHandler
     public void PreInit(FMLPreInitializationEvent event) {
         ShipwreckConfig.initConfiguration(event);
+        File structureFile = new File("./structures");
+        if (!structureFile.exists())
+        {
+            try {
+                structureFile.mkdir();
+            }
+            catch(SecurityException e) {
+                System.out.println("Unable to create structure folder for custom structures");
+            }
+        }
     }
 
     @EventHandler

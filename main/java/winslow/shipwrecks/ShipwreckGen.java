@@ -14,6 +14,7 @@ import net.minecraft.block.properties.IProperty;
 import net.minecraft.block.properties.PropertyDirection;
 import net.minecraft.block.properties.PropertyEnum;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.client.Minecraft;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
@@ -23,6 +24,7 @@ import net.minecraft.world.chunk.IChunkGenerator;
 import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraftforge.fml.common.IWorldGenerator;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Collection;
@@ -86,8 +88,17 @@ public class ShipwreckGen implements IWorldGenerator {
             //Read JSON string from structure file
             URL path = ShipwrecksMain.class.getResource("/assets/" + ShipwrecksMain.MODID
                     + "/structures/" + structure + ".json");
-            if (path == null)
-                return;
+            if (path == null) {
+                File structurePath;
+                try {
+                    structurePath = new File("./structures/" + structure + ".json");
+                    if(!structurePath.exists())
+                        return;
+                    path = structurePath.toURI().toURL();
+                } catch (Exception ex) {
+                    return;
+                }
+            }
             String textFile = Resources.toString(path, Charsets.UTF_8);
 
             JsonObject jsonObj = (JsonObject) parser.parse(textFile);
